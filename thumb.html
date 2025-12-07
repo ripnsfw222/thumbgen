@@ -1,499 +1,541 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Thumbnails de Vídeo PRO</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        /* Variáveis CSS para um tema mais fácil */
-        :root {
-            --primary-color: #007BFF;
-            --accent-color: #28a745; /* Verde para sucesso/botões */
-            --background-light: #f9f9f9;
-            --text-dark: #333;
-            --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎬 Gerador de Thumbnails de Vídeo PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<style>
+/* 🎨 Estilos Globais */
+:root {
+    --primary-color: #1a73e8; /* Azul Google */
+    --secondary-color: #34a853; /* Verde */
+    --background-color: #f8f9fa; /* Fundo claro */
+    --card-background: #ffffff;
+    --text-color: #202124;
+    --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --danger-color: #e81a30; /* Vermelho para Parar/Limpar */
+}
 
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0 20px;
-            background: linear-gradient(135deg, #e0f0ff, var(--background-light));
-            color: var(--text-dark);
-            min-height: 100vh;
-        }
+body {
+    font-family: 'Roboto', sans-serif;
+    padding: 20px;
+    background: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    /* Adiciona margem para que o conteúdo não fique escondido sob o menu fixo */
+    margin-top: 100px; 
+}
 
-        .container {
-            width: 100%;
-            margin: 0 auto;
-            padding-top: 20px;
-        }
+h1 {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 2em;
+    margin-bottom: 20px;
+    border-bottom: 3px solid var(--secondary-color);
+    padding-bottom: 10px;
+    display: inline-block;
+}
 
-        h1 {
-            text-align: center;
-            margin: 30px 0 20px;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
+/* ⚙️ Controles Fixos */
+.controls-container {
+    /* NOVO: Div para conter os controles e fixá-los */
+    position: sticky; 
+    top: 0;
+    z-index: 1000;
+    background: var(--background-color); /* Garante que o fundo não seja transparente */
+    padding: 10px 0;
+    margin: -20px -20px 20px -20px; /* Estende para as bordas do padding do body */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
 
-        /* Área de Controle (Upload + Intervalo) */
-        .controls-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: #fff;
-            border-radius: 15px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .input-group {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            width: 100%;
-            max-width: 500px;
-            justify-content: center;
-            align-items: center;
-        }
+.controls {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 0;
+    padding: 15px 20px; /* Padding interno */
+    background: var(--card-background);
+    border-radius: 0; /* Remove border-radius para sticky, ou manter arredondado */
+    box-shadow: none; /* Remove a sombra neste container se a sombra for no container fixo */
+    border-bottom: 1px solid #ddd;
+}
 
-        /* Campos de Input */
-        input[type="file"], input[type="number"] {
-            padding: 12px 15px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            cursor: pointer;
-            background: #fff;
-            transition: all 0.3s;
-        }
-        
-        /* NOVO CSS: Estado desabilitado para inputs */
-        input:disabled, input[type="file"]:disabled {
-            background-color: #f1f1f1;
-            cursor: not-allowed;
-            opacity: 0.8;
-        }
+.action-buttons {
+    margin-left: auto; /* Empurra os botões para a direita */
+    display: flex;
+    gap: 10px;
+}
 
-        input[type="file"] {
-            flex-grow: 1;
-        }
+/* 🖼️ Input de Arquivo */
+#videoInput {
+    padding: 10px;
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+}
 
-        input[type="number"] {
-            width: 100px;
-            text-align: center;
-        }
-        
-        /* Botão de Limpar */
-        #clearButton {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 1em;
-            cursor: pointer;
-            width: 100%;
-            max-width: 250px;
-            margin-top: 15px;
-            transition: background-color 0.3s;
-        }
+/* ⏱️ Input de Intervalo */
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
 
-        #clearButton:hover {
-            background-color: #c82333;
-        }
-        
-        /* Estado desabilitado para o botão Limpar */
-        #clearButton:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
+#intervalInput {
+    width: 60px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    text-align: center;
+}
 
-        /* ************************************************* */
-        /* NOVO CSS: Barra de Progresso */
-        /* ************************************************* */
-        #progressBarContainer {
-            width: 100%;
-            max-width: 500px;
-            height: 10px;
-            background-color: #e9ecef;
-            border-radius: 5px;
-            overflow: hidden;
-            margin-top: 10px;
-            display: none; /* Escondido por padrão */
-        }
-        #progressBar {
-            height: 100%;
-            width: 0%;
-            background-color: var(--primary-color);
-            transition: width 0.3s;
-        }
-        /* FIM CSS BARRA DE PROGRESSO */
+/* 🔎 Filtros */
+label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    cursor: pointer;
+}
 
-        /* Estilo do Feedback de Carregamento */
-        #statusMessage {
-            font-weight: 500;
-            color: var(--primary-color);
-            margin-top: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--primary-color);
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-        #scrollTopBtn {
-            display: none;
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            z-index: 99;
-            border: none;
-            outline: none;
-            background-color: var(--primary-color);
-            color: white;
-            cursor: pointer;
-            padding: 15px;
-            border-radius: 50%;
-            font-size: 18px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            transition: background-color 0.3s, opacity 0.3s;
-        }
+input[type="checkbox"]:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
 
-        #scrollTopBtn:hover {
-            background-color: #0056b3;
-        }
-        
-        /* Grid Thumbnails */
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin-bottom: 50px;
-        }
-        
-        .thumb-card {
-            background: #fff;
-            border: 1px solid #eee;
-            border-radius: 15px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: var(--card-shadow);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
+input[type="checkbox"]:checked::after {
+    content: "\f00c"; /* Ícone de check do Font Awesome */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 12px;
+    color: white;
+}
 
-        .thumb-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(0, 123, 255, 0.2);
-        }
+/* 💡 Status */
+#status {
+    margin: 20px 0;
+    padding: 15px;
+    background: #e6f0ff;
+    border: 1px solid #cce0ff;
+    border-left: 5px solid var(--primary-color);
+    border-radius: 8px;
+    font-weight: 500;
+}
 
-        .thumb-card img {
-            width: 100%;
-            max-height: 400px;
-            object-fit: cover;
-            aspect-ratio: 16 / 9;
-            border-radius: 10px;
-            margin-bottom: 15px;
-        }
+/* 🏞️ Thumbnails Grid: Alteração para 2 colunas */
+#thumbnails {
+    display: grid;
+    /* Define 2 colunas de largura igual, ideal para desktop/tablet */
+    grid-template-columns: 1fr 1fr; 
+    gap: 20px;
+    margin-top: 20px;
+}
 
-        .thumb-card button {
-            background: var(--accent-color);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 20px;
-            font-size: 1em;
-            font-weight: 500;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.3s;
-        }
+.thumb-card {
+    background: var(--card-background);
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: var(--shadow-light);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
 
-        .thumb-card button:hover {
-            background: #218838;
-        }
+.thumb-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
 
-        /* Responsividade */
-        @media (max-width: 768px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        @media (max-width: 600px) {
-            .controls-area {
-                max-width: 100%;
-            }
-            .input-group {
-                flex-direction: column;
-            }
-            input[type="number"] {
-                width: 100%;
-            }
-            #clearButton {
-                 max-width: 100%;
-            }
-            #scrollTopBtn {
-                bottom: 20px;
-                right: 20px;
-                padding: 12px;
-                font-size: 16px;
-            }
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
+.thumb-card img {
+    width: 100%;
+    aspect-ratio: 16 / 9; /* Proporção padrão de vídeo */
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #eee;
+}
+
+/* 💾 Botão Padrão */
+button {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: background-color 0.2s, opacity 0.3s;
+}
+
+button:hover:not(:disabled) {
+    background-color: #2c8c46; /* Verde mais escuro */
+}
+
+/* Botões de Ação */
+#stopProcessing {
+    background-color: var(--danger-color);
+}
+#stopProcessing:hover:not(:disabled) {
+    background-color: #b81427;
+}
+
+#clearResults {
+    background-color: #6c757d; /* Cinza */
+}
+#clearResults:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
+/* 📱 Responsividade */
+
+@media (max-width: 768px) {
+    .controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .action-buttons {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-around;
+    }
+    .action-buttons button {
+        flex-grow: 1;
+    }
+    #thumbnails {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+        margin-top: 150px; /* Aumenta margem superior para menus menores/quebrados */
+    }
+    .controls {
+        padding: 10px;
+    }
+    #thumbnails {
+        grid-template-columns: 1fr;
+    }
+    .action-buttons button {
+        font-size: 0.9em;
+        padding: 8px 15px;
+    }
+}
+</style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>Gerador de Thumbnails de Vídeo 🎬</h1>
-        
-        <div class="controls-area">
-            <div class="input-group">
-                <input type="file" id="videoInput" accept="video/*" required>
-                <div>
-                    <label for="intervalInput" style="font-size: 0.9em; display: block; margin-bottom: 5px;">Intervalo (segundos):</label>
-                    <input type="number" id="intervalInput" value="15" min="5" max="120" title="Intervalo de captura em segundos (ex: 15)">
-                </div>
-            </div>
-            <p id="statusMessage">Aguardando envio do vídeo...</p>
-            
-            <div id="progressBarContainer">
-                <div id="progressBar"></div>
-            </div>
 
-            <button id="clearButton" onclick="clearAll()" disabled><i class="fas fa-trash-alt"></i> Limpar Tudo</button>
+<h1><i class="fas fa-magic"></i> Gerador de Thumbnails Inteligente</h1>
+
+<div class="controls-container">
+    <div class="controls">
+        <div class="input-group">
+            <i class="fas fa-video fa-lg" style="color: var(--primary-color);"></i>
+            <input type="file" id="videoInput" accept="video/*" title="Selecione o arquivo de vídeo">
+        </div>
+        
+        <div class="input-group">
+            <i class="fas fa-clock" style="color: var(--primary-color);"></i>
+            <label for="intervalInput">Intervalo (s):</label>
+            <input type="number" id="intervalInput" value="15" min="1" title="Intervalo de captura em segundos">
         </div>
 
-        <div id="thumbnails" class="grid"></div>
+        <label title="Apenas frames onde um rosto é detectado">
+            <input type="checkbox" id="faceFilter" checked> 
+            <i class="fas fa-user"></i> Rosto Detectado
+        </label>
+        
+        <label title="Apenas frames onde os olhos estão abertos">
+            <input type="checkbox" id="eyesOpenFilter" checked> 
+            <i class="fas fa-eye"></i> Olhos Abertos
+        </label>
+
+        <div class="action-buttons">
+            <button id="stopProcessing" disabled><i class="fas fa-stop"></i> Parar</button>
+            <button id="clearResults"><i class="fas fa-trash-alt"></i> Limpar Tudo</button>
+        </div>
     </div>
-    
-    <button onclick="scrollToTop()" id="scrollTopBtn" title="Voltar ao Topo">
-        <i class="fas fa-arrow-up"></i>
-    </button>
-    
-    <script>
-        const videoInput = document.getElementById("videoInput");
-        const intervalInput = document.getElementById("intervalInput");
-        const thumbsDiv = document.getElementById("thumbnails");
-        const statusMessage = document.getElementById("statusMessage");
-        const clearButton = document.getElementById("clearButton");
-        const scrollTopBtn = document.getElementById("scrollTopBtn");
-        // Novos elementos para a barra de progresso
-        const progressBarContainer = document.getElementById("progressBarContainer");
-        const progressBar = document.getElementById("progressBar");
+</div>
+
+<div id="status">Carregando modelos de IA...</div>
+<div id="thumbnails"></div>
+
+<script>
+const videoInput = document.getElementById("videoInput");
+const intervalInput = document.getElementById("intervalInput");
+const faceFilter = document.getElementById("faceFilter");
+const eyesOpenFilter = document.getElementById("eyesOpenFilter");
+const thumbsDiv = document.getElementById("thumbnails");
+const status = document.getElementById("status");
+const stopButton = document.getElementById("stopProcessing");
+const clearButton = document.getElementById("clearResults");
+
+// Variáveis de controle de processo
+let stopFlag = false;
+let isProcessing = false;
+
+const EYE_OPEN_THRESHOLD = 0.25; 
+let modelsLoaded = false;
+
+// Configuração do detector para SSD Mobilenet V1 (mais preciso)
+const faceDetectionOptions = new faceapi.SsdMobilenetv1Options({ 
+    minConfidence: 0.5
+});
+
+// Resoluções alvo para 720p
+const RES_720P_LANDSCAPE = { width: 1280, height: 720 }; // 16:9
+const RES_720P_PORTRAIT = { width: 720, height: 1280 }; // 9:16 (Inverso)
+
+// Funções de Ação ------------------------------------------------------------------
+
+function enableControls(enable) {
+    videoInput.disabled = !enable;
+    intervalInput.disabled = !enable;
+    faceFilter.disabled = !enable;
+    eyesOpenFilter.disabled = !enable;
+}
+
+function updateButtons(processing) {
+    isProcessing = processing;
+    stopButton.disabled = !processing;
+    clearButton.disabled = processing;
+    enableControls(!processing);
+}
+
+stopButton.addEventListener('click', () => {
+    stopFlag = true;
+    stopButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Parando...';
+    stopButton.disabled = true;
+});
+
+clearButton.addEventListener('click', () => {
+    clearResults();
+});
+
+function clearResults() {
+    thumbsDiv.innerHTML = '';
+    status.innerHTML = modelsLoaded ? 
+        '<i class="fas fa-check-circle" style="color:var(--secondary-color)"></i> Pronto para selecionar um novo vídeo.' : 
+        '<i class="fas fa-hourglass-half fa-spin"></i> Carregando modelos...';
+    // Remove o arquivo do input para permitir o upload do mesmo arquivo novamente
+    videoInput.value = '';
+    updateButtons(false);
+}
+
+// ----------------------------------------------------------------------------------
 
 
-        // NOVO JS: Função para desabilitar/habilitar inputs
-        function toggleControls(disabled) {
-            videoInput.disabled = disabled;
-            intervalInput.disabled = disabled;
-            // O botão Limpar é gerenciado separadamente
-            // clearButton.disabled = disabled; 
+// Funções Auxiliares (mantidas)
+async function loadModels() {
+    const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights/';
+    try {
+        status.innerHTML = '<i class="fas fa-hourglass-half fa-spin"></i> Carregando modelos...';
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL); 
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        modelsLoaded = true;
+        status.innerHTML = '<i class="fas fa-check-circle" style="color:var(--secondary-color)"></i> Modelos carregados! Selecione um vídeo para começar.';
+    } catch(err) {
+        status.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:red"></i> Erro ao carregar modelos. Recarregue a página.';
+        console.error(err);
+    }
+}
+loadModels();
+
+function seekVideo(video, time){
+    return new Promise(resolve=>{
+        video.currentTime = time;
+        if(video.requestVideoFrameCallback){
+            video.requestVideoFrameCallback(()=>resolve());
+        } else {
+            video.addEventListener('seeked', resolve, {once:true});
+        }
+    });
+}
+
+function downloadImage(dataURL, filename){
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = filename;
+    a.click();
+}
+
+function eyeOpenRatio(eye){
+    const vertical1 = distance(eye[1], eye[5]);
+    const vertical2 = distance(eye[2], eye[4]);
+    const horizontal = distance(eye[0], eye[3]);
+    return (vertical1 + vertical2) / (2 * horizontal + 1e-6); 
+}
+
+function distance(p1,p2){
+    return Math.hypot(p1.x-p2.x, p1.y-p2.y);
+}
+
+function resizeCanvas(originalCanvas, videoWidth, videoHeight) {
+    const aspectRatio = videoWidth / videoHeight;
+    let targetWidth, targetHeight;
+    
+    if (aspectRatio > 1) { 
+        targetWidth = RES_720P_LANDSCAPE.width;
+        targetHeight = RES_720P_LANDSCAPE.height;
+    } else { 
+        targetWidth = RES_720P_PORTRAIT.width;
+        targetHeight = RES_720P_PORTRAIT.height;
+    }
+
+    const resizedCanvas = document.createElement("canvas");
+    resizedCanvas.width = targetWidth;
+    resizedCanvas.height = targetHeight;
+    const ctx = resizedCanvas.getContext("2d");
+    
+    ctx.drawImage(originalCanvas, 0, 0, targetWidth, targetHeight);
+    
+    return resizedCanvas;
+}
+
+
+// Processamento Principal ----------------------------------------------------------
+
+videoInput.addEventListener("change", async ()=>{
+    thumbsDiv.innerHTML = '';
+    const file = videoInput.files[0];
+    if(!file) return;
+    if(!modelsLoaded){
+        alert("Aguarde os modelos de IA carregarem antes de enviar o vídeo!");
+        return;
+    }
+
+    // Inicializa o processo
+    stopFlag = false;
+    updateButtons(true);
+    stopButton.innerHTML = '<i class="fas fa-stop"></i> Parar';
+
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.src = url;
+    video.muted = true;
+    video.preload = "metadata";
+    video.style.display = 'none'; 
+
+    document.body.appendChild(video); 
+
+    await new Promise(resolve => video.addEventListener('loadedmetadata', resolve, {once:true}));
+    const duration = video.duration;
+    const interval = parseInt(intervalInput.value) || 15;
+    const filterFace = faceFilter.checked;
+    const filterEyes = eyesOpenFilter.checked;
+    
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
+
+    status.innerHTML = `<i class="fas fa-cogs fa-spin"></i> Processando frames...`;
+
+    let generated = 0;
+    let totalFrames = Math.ceil(duration/interval);
+    let framesProcessed = 0;
+
+    for(let t=0; t<duration; t+=interval){
+        // NOVO: Verifica a flag de parada em cada iteração
+        if(stopFlag) {
+            status.innerHTML = `<i class="fas fa-times-circle" style="color:var(--danger-color)"></i> Processamento interrompido pelo usuário. **${generated}** thumbnails geradas.`;
+            break;
         }
 
-        // Função auxiliar para resetar inputs e estado
-        function clearInputs() {
-            videoInput.value = "";
-            intervalInput.value = 15;
+        await seekVideo(video,t);
+
+        const originalCanvas = document.createElement("canvas");
+        originalCanvas.width = videoWidth;
+        originalCanvas.height = videoHeight;
+        const ctx = originalCanvas.getContext("2d");
+        ctx.drawImage(video,0,0,originalCanvas.width,originalCanvas.height);
+
+        let passFilters = true;
+        if(filterFace || filterEyes){
+            const detections = await faceapi.detectAllFaces(originalCanvas, faceDetectionOptions).withFaceLandmarks();
+            
+            if(filterFace && detections.length===0) passFilters=false;
+            
+            if(filterEyes && detections.length>0 && passFilters){
+                for(const det of detections){
+                    const leftEye = det.landmarks.getLeftEye();
+                    const rightEye = det.landmarks.getRightEye();
+                    const ratioL = eyeOpenRatio(leftEye);
+                    const ratioR = eyeOpenRatio(rightEye);
+
+                    if(ratioL < EYE_OPEN_THRESHOLD || ratioR < EYE_OPEN_THRESHOLD){
+                        passFilters=false;
+                        break; 
+                    }
+                }
+            }
         }
 
-        // Lógica para mostrar/esconder o botão de topo
-        window.onscroll = function() {
-            if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
-                scrollTopBtn.style.display = "block";
+        if(passFilters){
+            const finalCanvas = resizeCanvas(originalCanvas, videoWidth, videoHeight);
+            const dataURL = finalCanvas.toDataURL("image/jpeg",0.95);
+            
+            const card = document.createElement("div");
+            card.className="thumb-card";
+            const img = document.createElement("img"); 
+            img.src=dataURL;
+            if (finalCanvas.width > finalCanvas.height) {
+                 img.style.aspectRatio = '16 / 9';
             } else {
-                scrollTopBtn.style.display = "none";
+                 img.style.aspectRatio = '9 / 16';
             }
-        };
-
-        // Função para rolar a página para o topo suavemente
-        function scrollToTop() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
-
-
-        function clearAll() {
-            clearInputs();
-            thumbsDiv.innerHTML = "";
-            statusMessage.innerHTML = 'Aguardando envio do vídeo...';
-            clearButton.disabled = true;
-            // Esconde e reseta a barra de progresso
-            progressBarContainer.style.display = 'none';
-            progressBar.style.width = '0%';
-        }
-
-        videoInput.addEventListener("change", async () => {
-            const file = videoInput.files[0];
-            if (!file) return;
-
-            // 1. Desabilita controles e mostra barra
-            toggleControls(true); 
-            clearButton.disabled = false;
-            progressBarContainer.style.display = 'block';
-            progressBar.style.width = '0%';
             
-            const interval = parseInt(intervalInput.value) || 15;
-            if (interval < 5) intervalInput.value = 5;
-
-            statusMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando metadados do vídeo...';
-            thumbsDiv.innerHTML = "";
-
-            const url = URL.createObjectURL(file);
-            const video = document.createElement("video");
-            video.src = url;
-            video.preload = "metadata";
-            video.muted = true;
+            const btn = document.createElement("button");
+            btn.innerHTML = `<i class="fas fa-download"></i> Salvar 720p frame ${Math.floor(t)}s`;
+            btn.onclick = ()=>downloadImage(dataURL, `thumb_720p_${Math.floor(t)}s.jpg`);
             
-            let numCaptures = 0;
-            let capturedCount = 0;
-
-            try {
-                // Espera pelo carregamento dos metadados
-                await new Promise((resolve, reject) => {
-                    video.addEventListener("loadedmetadata", resolve);
-                    video.addEventListener("error", () => reject(new Error("Erro ao carregar o vídeo.")));
-                });
-
-                const duration = video.duration;
-                if (duration === Infinity) {
-                    throw new Error("Duração do vídeo não pode ser determinada. Tente outro arquivo.");
-                }
-                
-                numCaptures = Math.floor(duration / interval);
-
-                // Define o número total de capturas, incluindo a última (se necessário)
-                let totalCaptures = numCaptures;
-                if ((duration % interval) > 1 && duration > interval * numCaptures) {
-                    totalCaptures++;
-                }
-
-                statusMessage.innerHTML = `<i class="fas fa-play-circle"></i> Processando ${totalCaptures} capturas (a cada ${interval}s)...`;
-
-                for (let t = 0; t < duration; t += interval) {
-                    await captureFrame(video, t, file.name);
-                    capturedCount++;
-                    
-                    // Atualiza o status e a barra de progresso
-                    statusMessage.innerHTML = `<i class="fas fa-cogs"></i> Capturando frame: ${capturedCount}/${totalCaptures}`;
-                    const progress = (capturedCount / totalCaptures) * 100;
-                    progressBar.style.width = `${progress}%`;
-                }
-
-                // Captura o último frame se o intervalo não tiver chegado lá
-                if ((duration % interval) > 1 && duration > interval * numCaptures) {
-                    await captureFrame(video, duration - 0.5, file.name); // Perto do final
-                    capturedCount++;
-                }
-                
-                statusMessage.innerHTML = `<i class="fas fa-check-circle" style="color: ${getComputedStyle(document.documentElement).getPropertyValue('--accent-color')}"></i> Processamento Concluído! ${capturedCount} Thumbnails geradas.`;
-                progressBar.style.width = '100%'; // Garante que a barra complete
-                
-            } catch (error) {
-                console.error(error);
-                statusMessage.innerHTML = '<i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Erro: ' + error.message;
-                clearInputs();
-                clearButton.disabled = true;
-                progressBarContainer.style.display = 'none';
-            } finally {
-                URL.revokeObjectURL(url);
-                // 2. Reabilita controles após conclusão ou erro
-                toggleControls(false); 
-            }
-        });
-
-        async function captureFrame(video, time, videoName) {
-            return new Promise(resolve => {
-                video.currentTime = time;
-                video.addEventListener("seeked", async function handler() {
-                    
-                    const canvas = document.createElement("canvas");
-                    
-                    const MAX_WIDTH = 1280;
-                    const MAX_HEIGHT = 720;
-                    
-                    let width = video.videoWidth;
-                    let height = video.videoHeight;
-                    
-                    if (width > MAX_WIDTH) {
-                        height = height * (MAX_WIDTH / width);
-                        width = MAX_WIDTH;
-                    }
-                    if (height > MAX_HEIGHT) {
-                        width = width * (MAX_HEIGHT / height);
-                        height = MAX_HEIGHT;
-                    }
-                    
-                    canvas.width = width;
-                    canvas.height = height;
-
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-                    const dataURL = canvas.toDataURL("image/jpeg", 0.95);
-                    
-                    const card = document.createElement("div");
-                    card.className = "thumb-card";
-
-                    const img = document.createElement("img");
-                    img.src = dataURL;
-
-                    const btn = document.createElement("button");
-                    btn.innerHTML = `<i class="fas fa-download"></i> Salvar ${Math.round(canvas.width)}x${Math.round(canvas.height)}`;
-
-                    const timeLabel = document.createElement("p");
-                    timeLabel.textContent = `Tempo: ${formatTime(time)}`;
-                    timeLabel.style.fontWeight = '500';
-                    timeLabel.style.marginBottom = '10px';
-
-
-                    btn.onclick = () => {
-                        canvas.toBlob((blob) => {
-                            const compressedURL = URL.createObjectURL(blob);
-
-                            const link = document.createElement("a");
-                            link.href = compressedURL;
-                            const timeStr = formatTime(time).replace(/:/g, '-');
-                            link.download = videoName.replace(/\.[^/.]+$/, "") + `_thumb_${timeStr}.jpg`;
-                            link.click();
-                            
-                            URL.revokeObjectURL(compressedURL);
-                        }, "image/jpeg", 0.95); 
-                    };
-
-                    card.appendChild(img);
-                    card.appendChild(timeLabel);
-                    card.appendChild(btn);
-                    thumbsDiv.appendChild(card);
-
-                    video.removeEventListener("seeked", handler);
-                    resolve();
-                });
-            });
+            card.appendChild(img); 
+            card.appendChild(btn);
+            thumbsDiv.appendChild(card);
+            generated++;
         }
         
-        // Função para formatar o tempo (segundos) em HH:MM:SS
-        function formatTime(totalSeconds) {
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = Math.floor(totalSeconds % 60);
+        framesProcessed++;
+        status.innerHTML = `<i class="fas fa-cogs fa-spin"></i> Processando frames... (${framesProcessed}/${totalFrames}) | Geradas: **${generated}**`;
+        await new Promise(r=>setTimeout(r,10)); 
+    }
 
-            const pad = (num) => num.toString().padStart(2, '0');
+    if (!stopFlag) {
+        status.innerHTML = generated > 0 ? 
+            `<i class="fas fa-check-circle" style="color:var(--secondary-color)"></i> Processamento concluído! **${generated}** thumbnails 720p geradas.` : 
+            '<i class="fas fa-exclamation-triangle" style="color:red"></i> Nenhuma thumbnail gerada. Tente desativar os filtros ou aumentar o intervalo.';
+    }
+    
+    // Finaliza o processo
+    updateButtons(false);
+    URL.revokeObjectURL(url);
+    video.remove();
+});
+</script>
 
-            if (hours > 0) {
-                return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-            } else {
-                return `${pad(minutes)}:${pad(seconds)}`;
-            }
-        }
-    </script>
 </body>
-
 </html>
