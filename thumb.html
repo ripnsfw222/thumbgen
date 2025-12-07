@@ -63,6 +63,33 @@
             align-items: center;
         }
 
+        /* Campos de Input */
+        input[type="file"], input[type="number"] {
+            padding: 12px 15px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            background: #fff;
+            transition: all 0.3s;
+        }
+        
+        /* NOVO CSS: Estado desabilitado para inputs */
+        input:disabled, input[type="file"]:disabled {
+            background-color: #f1f1f1;
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        input[type="file"] {
+            flex-grow: 1;
+        }
+
+        input[type="number"] {
+            width: 100px;
+            text-align: center;
+        }
+        
         /* Botão de Limpar */
         #clearButton {
             background-color: #dc3545;
@@ -81,62 +108,34 @@
         #clearButton:hover {
             background-color: #c82333;
         }
+        
+        /* Estado desabilitado para o botão Limpar */
+        #clearButton:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
 
         /* ************************************************* */
-        /* NOVO CSS: Botão de Voltar ao Topo */
+        /* NOVO CSS: Barra de Progresso */
         /* ************************************************* */
-        #scrollTopBtn {
+        #progressBarContainer {
+            width: 100%;
+            max-width: 500px;
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
             display: none; /* Escondido por padrão */
-            position: fixed; /* Fixado na tela */
-            bottom: 30px; /* Distância da parte inferior */
-            right: 30px; /* Distância da lateral direita */
-            z-index: 99; /* Fica acima de outros elementos */
-            border: none;
-            outline: none;
+        }
+        #progressBar {
+            height: 100%;
+            width: 0%;
             background-color: var(--primary-color);
-            color: white;
-            cursor: pointer;
-            padding: 15px;
-            border-radius: 50%; /* Botão circular */
-            font-size: 18px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            transition: background-color 0.3s, opacity 0.3s;
+            transition: width 0.3s;
         }
+        /* FIM CSS BARRA DE PROGRESSO */
 
-        #scrollTopBtn:hover {
-            background-color: #0056b3;
-        }
-        
-        /* Ajuste de responsividade para o botão de topo em telas pequenas */
-        @media (max-width: 600px) {
-            #scrollTopBtn {
-                bottom: 20px;
-                right: 20px;
-                padding: 12px;
-                font-size: 16px;
-            }
-        }
-        /* FIM NOVO CSS */
-
-        input[type="file"], input[type="number"] {
-            padding: 12px 15px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            cursor: pointer;
-            background: #fff;
-            transition: all 0.3s;
-        }
-        
-        input[type="file"] {
-            flex-grow: 1;
-        }
-
-        input[type="number"] {
-            width: 100px;
-            text-align: center;
-        }
-        
         /* Estilo do Feedback de Carregamento */
         #statusMessage {
             font-weight: 500;
@@ -147,6 +146,29 @@
             gap: 10px;
         }
 
+        #scrollTopBtn {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 99;
+            border: none;
+            outline: none;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            padding: 15px;
+            border-radius: 50%;
+            font-size: 18px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, opacity 0.3s;
+        }
+
+        #scrollTopBtn:hover {
+            background-color: #0056b3;
+        }
+        
+        /* Grid Thumbnails */
         .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -215,6 +237,12 @@
             #clearButton {
                  max-width: 100%;
             }
+            #scrollTopBtn {
+                bottom: 20px;
+                right: 20px;
+                padding: 12px;
+                font-size: 16px;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
@@ -233,7 +261,12 @@
                 </div>
             </div>
             <p id="statusMessage">Aguardando envio do vídeo...</p>
-            <button id="clearButton" onclick="clearAll()"><i class="fas fa-trash-alt"></i> Limpar Tudo</button>
+            
+            <div id="progressBarContainer">
+                <div id="progressBar"></div>
+            </div>
+
+            <button id="clearButton" onclick="clearAll()" disabled><i class="fas fa-trash-alt"></i> Limpar Tudo</button>
         </div>
 
         <div id="thumbnails" class="grid"></div>
@@ -248,16 +281,29 @@
         const intervalInput = document.getElementById("intervalInput");
         const thumbsDiv = document.getElementById("thumbnails");
         const statusMessage = document.getElementById("statusMessage");
-        
-        // NOVO JS: Variável para o botão de topo
+        const clearButton = document.getElementById("clearButton");
         const scrollTopBtn = document.getElementById("scrollTopBtn");
+        // Novos elementos para a barra de progresso
+        const progressBarContainer = document.getElementById("progressBarContainer");
+        const progressBar = document.getElementById("progressBar");
 
 
-        // ************************************************* */
-        // NOVO JS: Lógica para mostrar/esconder o botão de topo
-        // ************************************************* */
+        // NOVO JS: Função para desabilitar/habilitar inputs
+        function toggleControls(disabled) {
+            videoInput.disabled = disabled;
+            intervalInput.disabled = disabled;
+            // O botão Limpar é gerenciado separadamente
+            // clearButton.disabled = disabled; 
+        }
+
+        // Função auxiliar para resetar inputs e estado
+        function clearInputs() {
+            videoInput.value = "";
+            intervalInput.value = 15;
+        }
+
+        // Lógica para mostrar/esconder o botão de topo
         window.onscroll = function() {
-            // Se o scroll vertical for maior que 200px, o botão aparece
             if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
                 scrollTopBtn.style.display = "block";
             } else {
@@ -265,40 +311,38 @@
             }
         };
 
-        // ************************************************* */
-        // NOVO JS: Função para rolar a página para o topo suavemente
-        // ************************************************* */
+        // Função para rolar a página para o topo suavemente
         function scrollToTop() {
             window.scrollTo({
                 top: 0,
-                behavior: 'smooth' // Rola suavemente
+                behavior: 'smooth'
             });
         }
 
 
         function clearAll() {
-            // Limpa o campo de upload (importante para recarregar o mesmo arquivo)
-            videoInput.value = ""; 
-            
-            // Limpa as miniaturas exibidas
+            clearInputs();
             thumbsDiv.innerHTML = "";
-            
-            // Reseta a mensagem de status
             statusMessage.innerHTML = 'Aguardando envio do vídeo...';
-            
-            // Reseta o intervalo para o valor padrão (15)
-            intervalInput.value = 15; 
+            clearButton.disabled = true;
+            // Esconde e reseta a barra de progresso
+            progressBarContainer.style.display = 'none';
+            progressBar.style.width = '0%';
         }
 
         videoInput.addEventListener("change", async () => {
             const file = videoInput.files[0];
             if (!file) return;
 
-            // 1. Obtém o intervalo do usuário, com fallback seguro
+            // 1. Desabilita controles e mostra barra
+            toggleControls(true); 
+            clearButton.disabled = false;
+            progressBarContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            
             const interval = parseInt(intervalInput.value) || 15;
             if (interval < 5) intervalInput.value = 5;
 
-            // 2. Feedback visual imediato
             statusMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando metadados do vídeo...';
             thumbsDiv.innerHTML = "";
 
@@ -308,6 +352,9 @@
             video.preload = "metadata";
             video.muted = true;
             
+            let numCaptures = 0;
+            let capturedCount = 0;
+
             try {
                 // Espera pelo carregamento dos metadados
                 await new Promise((resolve, reject) => {
@@ -320,30 +367,45 @@
                     throw new Error("Duração do vídeo não pode ser determinada. Tente outro arquivo.");
                 }
                 
-                const numCaptures = Math.floor(duration / interval);
-                let capturedCount = 0;
+                numCaptures = Math.floor(duration / interval);
 
-                statusMessage.innerHTML = `<i class="fas fa-play-circle"></i> Processando ${numCaptures + 1} capturas (a cada ${interval}s)...`;
+                // Define o número total de capturas, incluindo a última (se necessário)
+                let totalCaptures = numCaptures;
+                if ((duration % interval) > 1 && duration > interval * numCaptures) {
+                    totalCaptures++;
+                }
+
+                statusMessage.innerHTML = `<i class="fas fa-play-circle"></i> Processando ${totalCaptures} capturas (a cada ${interval}s)...`;
 
                 for (let t = 0; t < duration; t += interval) {
                     await captureFrame(video, t, file.name);
                     capturedCount++;
-                    statusMessage.innerHTML = `<i class="fas fa-cogs"></i> Capturando frame: ${capturedCount}/${numCaptures + 1}`;
+                    
+                    // Atualiza o status e a barra de progresso
+                    statusMessage.innerHTML = `<i class="fas fa-cogs"></i> Capturando frame: ${capturedCount}/${totalCaptures}`;
+                    const progress = (capturedCount / totalCaptures) * 100;
+                    progressBar.style.width = `${progress}%`;
                 }
 
                 // Captura o último frame se o intervalo não tiver chegado lá
                 if ((duration % interval) > 1 && duration > interval * numCaptures) {
                     await captureFrame(video, duration - 0.5, file.name); // Perto do final
+                    capturedCount++;
                 }
                 
                 statusMessage.innerHTML = `<i class="fas fa-check-circle" style="color: ${getComputedStyle(document.documentElement).getPropertyValue('--accent-color')}"></i> Processamento Concluído! ${capturedCount} Thumbnails geradas.`;
+                progressBar.style.width = '100%'; // Garante que a barra complete
                 
             } catch (error) {
                 console.error(error);
                 statusMessage.innerHTML = '<i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Erro: ' + error.message;
+                clearInputs();
+                clearButton.disabled = true;
+                progressBarContainer.style.display = 'none';
             } finally {
-                // Libera a URL do objeto após o processamento
                 URL.revokeObjectURL(url);
+                // 2. Reabilita controles após conclusão ou erro
+                toggleControls(false); 
             }
         });
 
@@ -354,7 +416,6 @@
                     
                     const canvas = document.createElement("canvas");
                     
-                    // Melhoria na Resolução de Captura: Padrão 1280x720 (HD) para web
                     const MAX_WIDTH = 1280;
                     const MAX_HEIGHT = 720;
                     
@@ -376,9 +437,8 @@
                     const ctx = canvas.getContext("2d");
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                    const dataURL = canvas.toDataURL("image/jpeg", 0.95); // Gera JPEG de alta qualidade
+                    const dataURL = canvas.toDataURL("image/jpeg", 0.95);
                     
-                    // Criação do cartão (mantendo a estrutura de design anterior)
                     const card = document.createElement("div");
                     card.className = "thumb-card";
 
@@ -395,7 +455,6 @@
 
 
                     btn.onclick = () => {
-                        // Usa toBlob para compressão JPEG de alta qualidade (0.95)
                         canvas.toBlob((blob) => {
                             const compressedURL = URL.createObjectURL(blob);
 
@@ -405,7 +464,7 @@
                             link.download = videoName.replace(/\.[^/.]+$/, "") + `_thumb_${timeStr}.jpg`;
                             link.click();
                             
-                            URL.revokeObjectURL(compressedURL); // Limpa após o download
+                            URL.revokeObjectURL(compressedURL);
                         }, "image/jpeg", 0.95); 
                     };
 
