@@ -625,7 +625,7 @@
         <div class="controls">
             <div class="control-group">
                 <label>Número de miniaturas</label>
-                <input type="number" id="frameCount" value="50" min="1" max="100">
+                <input type="number" id="frameCount" value="20" min="1" max="100">
             </div>
             <button id="generateThumbs" disabled>Gerar Miniaturas</button>
             <button id="clearAll" style="background: #ef4444; display: none;">Limpar Tudo</button>
@@ -841,7 +841,7 @@ generateBtn.addEventListener("click", () => {
                 ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
             }
 
-            const jpgData = canvas.toDataURL("image/jpeg", 0.8);
+            const jpgData = canvas.toDataURL("image/jpeg", 0.92);
             const timeStamp = video.currentTime;
 
             capturedFrames.push({ data: jpgData, time: timeStamp, index: count });
@@ -900,10 +900,37 @@ generateBtn.addEventListener("click", () => {
                     <option value="1080">1080p</option>
                     <option value="original">Original</option>
                 </select>
+                <label style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                    <input type="checkbox" class="menu-enhance" style="width: auto; margin: 0;">
+                    <span style="text-transform: none; font-size: 0.8rem; color: #fff;">Melhorar Qualidade</span>
+                </label>
+                <div class="enhance-controls" style="display: none; margin-top: 8px;">
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.75rem;">Intensidade</span>
+                        <span class="intensity-value" style="color: #667eea; font-weight: 700; font-size: 0.8rem;">100%</span>
+                    </label>
+                    <input type="range" class="menu-intensity" min="0" max="100" value="100" style="width: 100%; margin-top: 4px; cursor: pointer;">
+                </div>
                 <button class="download-menu-btn">Baixar</button>
             `;
 
             const currentFrameIndex = count;
+            
+            // Toggle de controles de intensidade
+            const enhanceCheckbox = downloadMenu.querySelector('.menu-enhance');
+            const enhanceControls = downloadMenu.querySelector('.enhance-controls');
+            const intensitySlider = downloadMenu.querySelector('.menu-intensity');
+            const intensityValue = downloadMenu.querySelector('.intensity-value');
+            
+            enhanceCheckbox.addEventListener('change', (e) => {
+                e.stopPropagation();
+                enhanceControls.style.display = enhanceCheckbox.checked ? 'block' : 'none';
+            });
+            
+            intensitySlider.addEventListener('input', (e) => {
+                e.stopPropagation();
+                intensityValue.textContent = e.target.value + '%';
+            });
             
             downloadBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -916,8 +943,10 @@ generateBtn.addEventListener("click", () => {
                 const format = downloadMenu.querySelector('.menu-format').value;
                 const quality = parseFloat(downloadMenu.querySelector('.menu-quality').value);
                 const resolution = downloadMenu.querySelector('.menu-resolution').value;
+                const enhance = downloadMenu.querySelector('.menu-enhance').checked;
+                const intensity = parseFloat(downloadMenu.querySelector('.menu-intensity').value) / 100;
                 
-                reprocessAndDownload(currentFrameIndex, format, quality, resolution);
+                reprocessAndDownload(currentFrameIndex, format, quality, resolution, enhance, intensity);
                 downloadMenu.classList.remove('show');
             };
 
@@ -981,7 +1010,7 @@ function downloadImage(data, filename) {
     a.click();
 }
 
-function reprocessAndDownload(frameIndex, format, quality, resolution) {
+function reprocessAndDownload(frameIndex, format, quality, resolution, enhance = false, intensity = 1.0) {
     const frame = capturedFrames[frameIndex];
     if (!frame) return;
     
@@ -1001,10 +1030,13 @@ function reprocessAndDownload(frameIndex, format, quality, resolution) {
         let targetHeight = resolution === 'original' ? tempVideo.videoHeight : parseInt(resolution);
         const targetWidth = Math.round(targetHeight * (16 / 9));
         
+        // Determina o tamanho do canvas baseado na orientação do vídeo
         if (videoAspect < targetAspect) {
+            // Vídeo vertical - sempre 16:9
             canvasWidth = targetWidth;
             canvasHeight = targetHeight;
         } else {
+            // Vídeo horizontal
             if (resolution === 'original') {
                 canvasWidth = tempVideo.videoWidth;
                 canvasHeight = tempVideo.videoHeight;
@@ -1020,7 +1052,9 @@ function reprocessAndDownload(frameIndex, format, quality, resolution) {
         tempCanvas.width = canvasWidth;
         tempCanvas.height = canvasHeight;
         
+        // Desenha com o mesmo efeito que aparece na tela
         if (videoAspect < targetAspect) {
+            // FUNDO DESFOCADO (mesmo efeito da visualização)
             const bgScale = canvasWidth / tempVideo.videoWidth;
             const bgHeight = tempVideo.videoHeight * bgScale;
             const bgOffsetY = (canvasHeight - bgHeight) / 2;
@@ -1028,6 +1062,7 @@ function reprocessAndDownload(frameIndex, format, quality, resolution) {
             ctx.filter = 'blur(40px) brightness(0.6)';
             ctx.drawImage(tempVideo, 0, bgOffsetY, canvasWidth, bgHeight);
             
+            // IMAGEM PRINCIPAL CENTRALIZADA
             ctx.filter = 'none';
             const scale = canvasHeight / tempVideo.videoHeight;
             const scaledWidth = tempVideo.videoWidth * scale;
@@ -1035,14 +1070,118 @@ function reprocessAndDownload(frameIndex, format, quality, resolution) {
             
             ctx.drawImage(tempVideo, offsetX, 0, scaledWidth, canvasHeight);
         } else {
+            // Vídeo horizontal normal
             ctx.drawImage(tempVideo, 0, 0, canvasWidth, canvasHeight);
+        }
+        
+        // Aplica melhorias automáticas estilo Photoshop
+        if (enhance) {
+            const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+            const data = imageData.data;
+            const pixelCount = canvasWidth * canvasHeight;
+            
+            // Construir histogramas por canal
+            const histR = new Array(256).fill(0);
+            const histG = new Array(256).fill(0);
+            const histB = new Array(256).fill(0);
+            
+            for (let i = 0; i < data.length; i += 4) {
+                histR[data[i]]++;
+                histG[data[i + 1]]++;
+                histB[data[i + 2]]++;
+            }
+            
+            // Função para encontrar percentis (Auto Tone)
+            function findPercentile(hist, percent) {
+                const target = pixelCount * percent;
+                let sum = 0;
+                for (let i = 0; i < 256; i++) {
+                    sum += hist[i];
+                    if (sum >= target) return i;
+                }
+                return 255;
+            }
+            
+            // Auto Tone: Encontrar pontos de corte (1% mais escuro e 1% mais claro)
+            const minR = findPercentile(histR, 0.01);
+            const maxR = findPercentile(histR, 0.99);
+            const minG = findPercentile(histG, 0.01);
+            const maxG = findPercentile(histG, 0.99);
+            const minB = findPercentile(histB, 0.01);
+            const maxB = findPercentile(histB, 0.99);
+            
+            // Auto Contrast: Média dos canais
+            const minGlobal = Math.min(minR, minG, minB);
+            const maxGlobal = Math.max(maxR, maxG, maxB);
+            
+            // Auto Color: Calcular média de cada canal
+            let sumR = 0, sumG = 0, sumB = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                sumR += data[i];
+                sumG += data[i + 1];
+                sumB += data[i + 2];
+            }
+            const avgR = sumR / pixelCount;
+            const avgG = sumG / pixelCount;
+            const avgB = sumB / pixelCount;
+            const avgGray = (avgR + avgG + avgB) / 3;
+            
+            // Calcular ajustes de cor automáticos
+            const colorIntensity = 0.3; // Ajuste aqui: 0.0 (sem correção) até 1.0 (máxima correção)
+            const colorAdjustR = 1 + (avgGray / avgR - 1) * colorIntensity;
+            const colorAdjustG = 1 + (avgGray / avgG - 1) * colorIntensity;
+            const colorAdjustB = 1 + (avgGray / avgB - 1) * colorIntensity;
+            
+            // Aplicar correções pixel por pixel
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i];
+                let g = data[i + 1];
+                let b = data[i + 2];
+                
+                // Guardar valores originais
+                const origR = r;
+                const origG = g;
+                const origB = b;
+                
+                // Auto Tone: Expandir cada canal individualmente
+                r = ((r - minR) / (maxR - minR)) * 255;
+                g = ((g - minG) / (maxG - minG)) * 255;
+                b = ((b - minB) / (maxB - minB)) * 255;
+                
+                // Auto Color: Neutralizar dominância de cor
+                r = r * colorAdjustR;
+                g = g * colorAdjustG;
+                b = b * colorAdjustB;
+                
+                // Auto Contrast: Aplicar ajuste global suave (50% do efeito)
+                const contrastFactor = 0.5;
+                const globalR = ((r - minGlobal) / (maxGlobal - minGlobal)) * 255;
+                const globalG = ((g - minGlobal) / (maxGlobal - minGlobal)) * 255;
+                const globalB = ((b - minGlobal) / (maxGlobal - minGlobal)) * 255;
+                
+                r = r * (1 - contrastFactor) + globalR * contrastFactor;
+                g = g * (1 - contrastFactor) + globalG * contrastFactor;
+                b = b * (1 - contrastFactor) + globalB * contrastFactor;
+                
+                // Aplicar intensidade (mix entre original e processado)
+                r = origR * (1 - intensity) + r * intensity;
+                g = origG * (1 - intensity) + g * intensity;
+                b = origB * (1 - intensity) + b * intensity;
+                
+                // Garantir valores válidos
+                data[i] = Math.min(255, Math.max(0, Math.round(r)));
+                data[i + 1] = Math.min(255, Math.max(0, Math.round(g)));
+                data[i + 2] = Math.min(255, Math.max(0, Math.round(b)));
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
         }
         
         let mimeType = format === 'jpeg' ? 'image/jpeg' : (format === 'png' ? 'image/png' : 'image/webp');
         let ext = format === 'jpeg' ? 'jpg' : format;
         
         const imageData = tempCanvas.toDataURL(mimeType, quality);
-        downloadImage(imageData, `thumb-${frameIndex + 1}.${ext}`);
+        downloadImage(imageData, `thumb-${frameIndex + 1}${enhance ? '-enhanced' : ''}.${ext}`);
     });
 }
 
