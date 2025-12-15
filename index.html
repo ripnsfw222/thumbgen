@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SmartThumb Pro</title>
-<!-- Favicon padrão (PNG ou ICO) -->
-<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/9449/9449215.png" type="image/x-icon">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
     * {
@@ -551,6 +549,7 @@
                 <input type="number" id="frameCount" value="50" min="1" max="100">
             </div>
             <button id="generateThumbs" disabled>Gerar Miniaturas</button>
+            <button id="clearAll" style="background: #ef4444; display: none;">Limpar Tudo</button>
         </div>
 
         <div class="progress-bar" id="progressBar">
@@ -616,6 +615,7 @@ const video = document.getElementById("videoElem");
 const canvas = document.getElementById("canvasElem");
 const thumbs = document.getElementById("thumbs");
 const generateBtn = document.getElementById("generateThumbs");
+const clearBtn = document.getElementById("clearAll");
 const frameCountInput = document.getElementById("frameCount");
 const progressBar = document.getElementById("progressBar");
 const progressFill = document.getElementById("progressFill");
@@ -625,6 +625,41 @@ const stats = document.getElementById("stats");
 
 let file;
 let capturedFrames = [];
+
+// Função para limpar tudo
+clearBtn.addEventListener('click', () => {
+    // Limpa as miniaturas
+    thumbs.innerHTML = '';
+    capturedFrames = [];
+    
+    // Reseta o arquivo
+    file = null;
+    
+    // Reseta a drop zone
+    dropZone.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+        <div>Arraste seu vídeo aqui ou clique para selecionar</div>
+    `;
+    dropZone.classList.remove('has-file');
+    
+    // Desabilita botões
+    generateBtn.disabled = true;
+    clearBtn.style.display = 'none';
+    
+    // Esconde elementos
+    actionsBar.style.display = 'none';
+    stats.style.display = 'none';
+    progressBar.classList.remove('active');
+    emptyState.style.display = 'block';
+    
+    // Reseta o input de arquivo
+    input.value = '';
+    
+    // Limpa o vídeo
+    video.src = '';
+});
 
 dropZone.addEventListener('click', () => input.click());
 
@@ -704,12 +739,17 @@ generateBtn.addEventListener("click", () => {
             // Se o vídeo for vertical (9:16), ajusta para preencher o canvas 16:9
             if (videoAspect < targetAspect) {
                 // Vídeo é mais alto que largo (vertical)
-                canvasWidth = 1920; // Largura fixa para qualidade
-                canvasHeight = 1080; // Altura 16:9
+                canvasWidth = 1280; // 720p width
+                canvasHeight = 720; // 720p height
             } else {
-                // Vídeo horizontal ou quadrado - mantém comportamento original
-                canvasWidth = video.videoWidth;
-                canvasHeight = video.videoHeight;
+                // Vídeo horizontal - redimensiona para 720p mantendo proporção
+                if (video.videoHeight > 720) {
+                    canvasHeight = 720;
+                    canvasWidth = Math.round((video.videoWidth / video.videoHeight) * 720);
+                } else {
+                    canvasWidth = video.videoWidth;
+                    canvasHeight = video.videoHeight;
+                }
             }
             
             canvas.width = canvasWidth;
@@ -792,6 +832,7 @@ generateBtn.addEventListener("click", () => {
             } else {
                 progressBar.classList.remove('active');
                 generateBtn.disabled = false;
+                clearBtn.style.display = 'inline-block';
                 actionsBar.style.display = 'flex';
                 stats.style.display = 'flex';
                 document.getElementById('statFrames').textContent = count;
