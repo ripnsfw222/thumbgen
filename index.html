@@ -102,7 +102,7 @@
     .controls {
         display: flex;
         gap: 1rem;
-        align-items: center;
+        align-items: flex-end;
         justify-content: center;
         margin-top: 1.5rem;
         flex-wrap: wrap;
@@ -125,8 +125,9 @@
         border: 2px solid #e5e7eb;
         border-radius: 10px;
         font-size: 1rem;
-        width: 120px;
+        width: 140px;
         transition: all 0.3s;
+        background: #fff;
     }
 
     .control-group input[type="number"]:focus {
@@ -248,7 +249,7 @@
         transition: all 0.3s;
     }
 
-    .download-all:hover {
+    .download-all:hover:not(:disabled) {
         background: #059669;
         transform: translateY(-2px);
     }
@@ -276,7 +277,7 @@
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         cursor: pointer;
         transition: all 0.3s;
-        overflow: hidden;
+        overflow: visible;
         opacity: 0;
         animation: fadeIn 0.5s forwards;
     }
@@ -296,6 +297,16 @@
         content: '';
         display: block;
         padding-top: 56.25%;
+    }
+
+    .thumb-card-inner {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 15px;
     }
 
     .thumb-card img {
@@ -361,6 +372,69 @@
         width: 16px;
         height: 16px;
         stroke: white;
+    }
+
+    .download-menu {
+        position: absolute;
+        bottom: 100%;
+        right: 0;
+        margin-bottom: 10px;
+        background: rgba(30, 30, 35, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 12px;
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 160px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        border: 1px solid rgba(255,255,255,0.1);
+        z-index: 100;
+    }
+
+    .download-menu.show {
+        display: flex;
+    }
+
+    .download-menu label {
+        color: #aaa;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .download-menu select {
+        padding: 6px 8px;
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 6px;
+        font-size: 0.85rem;
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .download-menu select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .download-menu-btn {
+        padding: 8px 12px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        margin-top: 4px;
+        transition: all 0.2s;
+    }
+
+    .download-menu-btn:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
     }
 
     #modal {
@@ -492,6 +566,11 @@
 
         .controls {
             flex-direction: column;
+            align-items: stretch;
+        }
+
+        .control-group {
+            width: 100%;
         }
 
         .control-group input[type="number"] {
@@ -611,6 +690,9 @@ const dropZone = document.getElementById('dropZone');
 const input = document.createElement('input');
 input.type = 'file';
 input.accept = 'video/*';
+input.style.display = 'none';
+document.body.appendChild(input);
+
 const video = document.getElementById("videoElem");
 const canvas = document.getElementById("canvasElem");
 const thumbs = document.getElementById("thumbs");
@@ -626,16 +708,11 @@ const stats = document.getElementById("stats");
 let file;
 let capturedFrames = [];
 
-// Função para limpar tudo
 clearBtn.addEventListener('click', () => {
-    // Limpa as miniaturas
     thumbs.innerHTML = '';
     capturedFrames = [];
-    
-    // Reseta o arquivo
     file = null;
     
-    // Reseta a drop zone
     dropZone.innerHTML = `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
@@ -644,20 +721,15 @@ clearBtn.addEventListener('click', () => {
     `;
     dropZone.classList.remove('has-file');
     
-    // Desabilita botões
     generateBtn.disabled = true;
     clearBtn.style.display = 'none';
     
-    // Esconde elementos
     actionsBar.style.display = 'none';
     stats.style.display = 'none';
     progressBar.classList.remove('active');
     emptyState.style.display = 'block';
     
-    // Reseta o input de arquivo
     input.value = '';
-    
-    // Limpa o vídeo
     video.src = '';
 });
 
@@ -730,19 +802,15 @@ generateBtn.addEventListener("click", () => {
         video.addEventListener("seeked", () => {
             const ctx = canvas.getContext("2d");
             
-            // Define o canvas para proporção 16:9
             const targetAspect = 16 / 9;
             const videoAspect = video.videoWidth / video.videoHeight;
             
             let canvasWidth, canvasHeight;
             
-            // Se o vídeo for vertical (9:16), ajusta para preencher o canvas 16:9
             if (videoAspect < targetAspect) {
-                // Vídeo é mais alto que largo (vertical)
-                canvasWidth = 1280; // 720p width
-                canvasHeight = 720; // 720p height
+                canvasWidth = 1280;
+                canvasHeight = 720;
             } else {
-                // Vídeo horizontal - redimensiona para 720p mantendo proporção
                 if (video.videoHeight > 720) {
                     canvasHeight = 720;
                     canvasWidth = Math.round((video.videoWidth / video.videoHeight) * 720);
@@ -755,9 +823,7 @@ generateBtn.addEventListener("click", () => {
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
             
-            // Preenche o canvas (object-fit: cover)
             if (videoAspect < targetAspect) {
-                // PASSO 1: Desenha o fundo desfocado (imagem expandida)
                 const bgScale = canvasWidth / video.videoWidth;
                 const bgHeight = video.videoHeight * bgScale;
                 const bgOffsetY = (canvasHeight - bgHeight) / 2;
@@ -765,7 +831,6 @@ generateBtn.addEventListener("click", () => {
                 ctx.filter = 'blur(40px) brightness(0.6)';
                 ctx.drawImage(video, 0, bgOffsetY, canvasWidth, bgHeight);
                 
-                // PASSO 2: Desenha a imagem principal centralizada (nítida)
                 ctx.filter = 'none';
                 const scale = canvasHeight / video.videoHeight;
                 const scaledWidth = video.videoWidth * scale;
@@ -773,7 +838,6 @@ generateBtn.addEventListener("click", () => {
                 
                 ctx.drawImage(video, offsetX, 0, scaledWidth, canvasHeight);
             } else {
-                // Para vídeos horizontais, comportamento normal
                 ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
             }
 
@@ -785,6 +849,9 @@ generateBtn.addEventListener("click", () => {
             const card = document.createElement('div');
             card.className = 'thumb-card';
             card.style.animationDelay = `${count * 0.05}s`;
+
+            const inner = document.createElement('div');
+            inner.className = 'thumb-card-inner';
 
             const img = document.createElement("img");
             img.src = jpgData;
@@ -810,17 +877,61 @@ generateBtn.addEventListener("click", () => {
             const downloadBtn = document.createElement('button');
             downloadBtn.className = 'action-btn';
             downloadBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
+            
+            const downloadMenu = document.createElement('div');
+            downloadMenu.className = 'download-menu';
+            downloadMenu.innerHTML = `
+                <label>Formato</label>
+                <select class="menu-format">
+                    <option value="jpeg" selected>JPEG</option>
+                    <option value="png">PNG</option>
+                    <option value="webp">WebP</option>
+                </select>
+                <label>Qualidade</label>
+                <select class="menu-quality">
+                    <option value="0.5">Baixa</option>
+                    <option value="0.8" selected>Média</option>
+                    <option value="1.0">Alta</option>
+                </select>
+                <label>Resolução</label>
+                <select class="menu-resolution">
+                    <option value="480">480p</option>
+                    <option value="720" selected>720p</option>
+                    <option value="1080">1080p</option>
+                    <option value="original">Original</option>
+                </select>
+                <button class="download-menu-btn">Baixar</button>
+            `;
+
+            const currentFrameIndex = count;
+            
             downloadBtn.onclick = (e) => {
                 e.stopPropagation();
-                downloadImage(jpgData, `thumb-${count + 1}.jpg`);
+                document.querySelectorAll('.download-menu.show').forEach(m => m.classList.remove('show'));
+                downloadMenu.classList.toggle('show');
             };
+
+            downloadMenu.querySelector('.download-menu-btn').onclick = (e) => {
+                e.stopPropagation();
+                const format = downloadMenu.querySelector('.menu-format').value;
+                const quality = parseFloat(downloadMenu.querySelector('.menu-quality').value);
+                const resolution = downloadMenu.querySelector('.menu-resolution').value;
+                
+                reprocessAndDownload(currentFrameIndex, format, quality, resolution);
+                downloadMenu.classList.remove('show');
+            };
+
+            downloadMenu.onclick = (e) => e.stopPropagation();
 
             actions.appendChild(downloadBtn);
             overlay.appendChild(timeLabel);
             overlay.appendChild(actions);
 
-            card.appendChild(img);
-            card.appendChild(overlay);
+            inner.appendChild(img);
+            inner.appendChild(overlay);
+            
+            card.appendChild(inner);
+            card.appendChild(downloadMenu);
             thumbs.appendChild(card);
 
             count++;
@@ -843,7 +954,6 @@ generateBtn.addEventListener("click", () => {
     }, { once: true });
 });
 
-// View controls
 document.querySelectorAll('.view-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
@@ -856,7 +966,6 @@ document.querySelectorAll('.view-btn').forEach(btn => {
     });
 });
 
-// Download all
 document.getElementById('downloadAll').addEventListener('click', () => {
     capturedFrames.forEach((frame, i) => {
         setTimeout(() => {
@@ -872,13 +981,81 @@ function downloadImage(data, filename) {
     a.click();
 }
 
+function reprocessAndDownload(frameIndex, format, quality, resolution) {
+    const frame = capturedFrames[frameIndex];
+    if (!frame) return;
+    
+    const tempVideo = document.getElementById("videoElem");
+    const tempCanvas = document.getElementById("canvasElem");
+    const ctx = tempCanvas.getContext("2d");
+    
+    tempVideo.currentTime = frame.time;
+    
+    tempVideo.addEventListener("seeked", function onSeek() {
+        tempVideo.removeEventListener("seeked", onSeek);
+        
+        const targetAspect = 16 / 9;
+        const videoAspect = tempVideo.videoWidth / tempVideo.videoHeight;
+        
+        let canvasWidth, canvasHeight;
+        let targetHeight = resolution === 'original' ? tempVideo.videoHeight : parseInt(resolution);
+        const targetWidth = Math.round(targetHeight * (16 / 9));
+        
+        if (videoAspect < targetAspect) {
+            canvasWidth = targetWidth;
+            canvasHeight = targetHeight;
+        } else {
+            if (resolution === 'original') {
+                canvasWidth = tempVideo.videoWidth;
+                canvasHeight = tempVideo.videoHeight;
+            } else if (tempVideo.videoHeight > targetHeight) {
+                canvasHeight = targetHeight;
+                canvasWidth = Math.round((tempVideo.videoWidth / tempVideo.videoHeight) * targetHeight);
+            } else {
+                canvasWidth = tempVideo.videoWidth;
+                canvasHeight = tempVideo.videoHeight;
+            }
+        }
+        
+        tempCanvas.width = canvasWidth;
+        tempCanvas.height = canvasHeight;
+        
+        if (videoAspect < targetAspect) {
+            const bgScale = canvasWidth / tempVideo.videoWidth;
+            const bgHeight = tempVideo.videoHeight * bgScale;
+            const bgOffsetY = (canvasHeight - bgHeight) / 2;
+            
+            ctx.filter = 'blur(40px) brightness(0.6)';
+            ctx.drawImage(tempVideo, 0, bgOffsetY, canvasWidth, bgHeight);
+            
+            ctx.filter = 'none';
+            const scale = canvasHeight / tempVideo.videoHeight;
+            const scaledWidth = tempVideo.videoWidth * scale;
+            const offsetX = (canvasWidth - scaledWidth) / 2;
+            
+            ctx.drawImage(tempVideo, offsetX, 0, scaledWidth, canvasHeight);
+        } else {
+            ctx.drawImage(tempVideo, 0, 0, canvasWidth, canvasHeight);
+        }
+        
+        let mimeType = format === 'jpeg' ? 'image/jpeg' : (format === 'png' ? 'image/png' : 'image/webp');
+        let ext = format === 'jpeg' ? 'jpg' : format;
+        
+        const imageData = tempCanvas.toDataURL(mimeType, quality);
+        downloadImage(imageData, `thumb-${frameIndex + 1}.${ext}`);
+    });
+}
+
+document.addEventListener('click', () => {
+    document.querySelectorAll('.download-menu.show').forEach(m => m.classList.remove('show'));
+});
+
 function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-// Modal controls
 const modal = document.getElementById('modal');
 const modalClose = document.getElementById('modalClose');
 
@@ -898,7 +1075,6 @@ document.addEventListener('keydown', e => {
     }
 });
 
-// Scroll buttons
 const scrollToTop = document.getElementById('scrollToTop');
 const scrollToBottom = document.getElementById('scrollToBottom');
 
@@ -907,7 +1083,6 @@ function updateScrollButtons() {
     const windowHeight = window.innerHeight;
     const documentHeight = document.documentElement.scrollHeight;
 
-    // Mostrar botões apenas se houver scroll disponível
     if (documentHeight > windowHeight + 100) {
         if (scrolled > 300) {
             scrollToTop.classList.add('visible');
