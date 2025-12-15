@@ -902,34 +902,26 @@ generateBtn.addEventListener("click", () => {
                 </select>
                 <label style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
                     <input type="checkbox" class="menu-enhance" style="width: auto; margin: 0;">
-                    <span style="text-transform: none; font-size: 0.8rem; color: #fff;">Melhorar Qualidade</span>
+                    <span style="text-transform: none; font-size: 0.8rem; color: #fff;">Baixar Múltiplas Versões</span>
                 </label>
-                <div class="enhance-controls" style="display: none; margin-top: 8px;">
-                    <label style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.75rem;">Intensidade</span>
-                        <span class="intensity-value" style="color: #667eea; font-weight: 700; font-size: 0.8rem;">100%</span>
-                    </label>
-                    <input type="range" class="menu-intensity" min="0" max="100" value="100" style="width: 100%; margin-top: 4px; cursor: pointer;">
+                <div class="enhance-info" style="display: none; margin-top: 4px; padding: 8px; background: rgba(102, 126, 234, 0.1); border-radius: 6px; border-left: 3px solid #667eea;">
+                    <p style="margin: 0; font-size: 0.7rem; color: #aaa; line-height: 1.4;">
+                        Baixará 6 versões:<br>
+                        0%, 20%, 40%, 60%, 80%, 100%
+                    </p>
                 </div>
                 <button class="download-menu-btn">Baixar</button>
             `;
 
             const currentFrameIndex = count;
             
-            // Toggle de controles de intensidade
+            // Toggle de informação de múltiplas versões
             const enhanceCheckbox = downloadMenu.querySelector('.menu-enhance');
-            const enhanceControls = downloadMenu.querySelector('.enhance-controls');
-            const intensitySlider = downloadMenu.querySelector('.menu-intensity');
-            const intensityValue = downloadMenu.querySelector('.intensity-value');
+            const enhanceInfo = downloadMenu.querySelector('.enhance-info');
             
             enhanceCheckbox.addEventListener('change', (e) => {
                 e.stopPropagation();
-                enhanceControls.style.display = enhanceCheckbox.checked ? 'block' : 'none';
-            });
-            
-            intensitySlider.addEventListener('input', (e) => {
-                e.stopPropagation();
-                intensityValue.textContent = e.target.value + '%';
+                enhanceInfo.style.display = enhanceCheckbox.checked ? 'block' : 'none';
             });
             
             downloadBtn.onclick = (e) => {
@@ -938,15 +930,26 @@ generateBtn.addEventListener("click", () => {
                 downloadMenu.classList.toggle('show');
             };
 
-            downloadMenu.querySelector('.download-menu-btn').onclick = (e) => {
+            downloadMenu.querySelector('.download-menu-btn').onclick = async (e) => {
                 e.stopPropagation();
                 const format = downloadMenu.querySelector('.menu-format').value;
                 const quality = parseFloat(downloadMenu.querySelector('.menu-quality').value);
                 const resolution = downloadMenu.querySelector('.menu-resolution').value;
-                const enhance = downloadMenu.querySelector('.menu-enhance').checked;
-                const intensity = parseFloat(downloadMenu.querySelector('.menu-intensity').value) / 100;
+                const multipleVersions = downloadMenu.querySelector('.menu-enhance').checked;
                 
-                reprocessAndDownload(currentFrameIndex, format, quality, resolution, enhance, intensity);
+                if (multipleVersions) {
+                    // Baixar múltiplas versões: 0%, 20%, 40%, 60%, 80%, 100%
+                    const intensities = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+                    for (let i = 0; i < intensities.length; i++) {
+                        setTimeout(() => {
+                            reprocessAndDownload(currentFrameIndex, format, quality, resolution, true, intensities[i]);
+                        }, i * 300); // 300ms de delay entre cada download
+                    }
+                } else {
+                    // Baixar apenas versão normal
+                    reprocessAndDownload(currentFrameIndex, format, quality, resolution, false, 1.0);
+                }
+                
                 downloadMenu.classList.remove('show');
             };
 
@@ -1181,7 +1184,19 @@ function reprocessAndDownload(frameIndex, format, quality, resolution, enhance =
         let ext = format === 'jpeg' ? 'jpg' : format;
         
         const imageData = tempCanvas.toDataURL(mimeType, quality);
-        downloadImage(imageData, `thumb-${frameIndex + 1}${enhance ? '-enhanced' : ''}.${ext}`);
+        
+        // Nome do arquivo com intensidade
+        let filename;
+        if (enhance && intensity < 1.0) {
+            const intensityPercent = Math.round(intensity * 100);
+            filename = `thumb-${frameIndex + 1}-${intensityPercent}%.${ext}`;
+        } else if (enhance && intensity === 1.0) {
+            filename = `thumb-${frameIndex + 1}-100%.${ext}`;
+        } else {
+            filename = `thumb-${frameIndex + 1}.${ext}`;
+        }
+        
+        downloadImage(imageData, filename);
     });
 }
 
