@@ -1,768 +1,836 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SmartThumb Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-    * {
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: 'Inter', sans-serif;
-        margin: 0;
-        padding: 0;
-        background: #1f2023;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .container {
-        flex: 1;
-        width: 100%;
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 2rem;
-    }
-
-    header {
-        text-align: center;
-        padding: 2rem 1rem;
-        color: #fff;
-        margin-bottom: 2rem;
-    }
-
-    header h1 {
-        margin: 0 0 0.5rem 0;
-        font-size: 2.5rem;
-        font-weight: 700;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-
-    header p {
-        margin: 0;
-        font-size: 1.1rem;
-        opacity: 0.9;
-    }
-
-    .upload-section {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        margin-bottom: 2rem;
-    }
-
-    .drop-zone {
-        width: 100%;
-        padding: 3rem;
-        border: 3px dashed #667eea;
-        border-radius: 15px;
-        text-align: center;
-        color: #667eea;
-        font-weight: 600;
-        font-size: 1.1rem;
-        cursor: pointer;
-        transition: all 0.3s;
-        background: #f8f9ff;
-        position: relative;
-    }
-
-    .drop-zone:hover {
-        background: #eef1ff;
-        border-color: #764ba2;
-        color: #764ba2;
-        transform: translateY(-2px);
-    }
-
-    .drop-zone.dragover {
-        background: #e0e7ff;
-        border-color: #4f46e5;
-        color: #4f46e5;
-        transform: scale(1.02);
-    }
-
-    .drop-zone.has-file {
-        border-color: #10b981;
-        color: #10b981;
-        background: #f0fdf4;
-    }
-
-    .drop-zone svg {
-        width: 48px;
-        height: 48px;
-        margin-bottom: 1rem;
-        opacity: 0.7;
-    }
-
-    .controls {
-        display: flex;
-        gap: 1rem;
-        align-items: flex-end;
-        justify-content: center;
-        margin-top: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .control-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .control-group label {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #4b5563;
-    }
-
-    .control-group input[type="number"] {
-        padding: 0.6rem 1rem;
-        border: 2px solid #e5e7eb;
-        border-radius: 10px;
-        font-size: 1rem;
-        width: 140px;
-        transition: all 0.3s;
-        background: #fff;
-    }
-
-    .control-group input[type="number"]:focus {
-        outline: none;
-        border-color: #667eea;
-    }
-
-    button {
-        padding: 0.8rem 2rem;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        border: none;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #fff;
-        transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    }
-
-    button:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-    }
-
-    button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .progress-bar {
-        width: 100%;
-        height: 8px;
-        background: #e5e7eb;
-        border-radius: 10px;
-        overflow: hidden;
-        margin-top: 1rem;
-        display: none;
-    }
-
-    .progress-bar.active {
-        display: block;
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        width: 0%;
-        transition: width 0.3s;
-        border-radius: 10px;
-    }
-
-    .stats {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 1rem;
-        flex-wrap: wrap;
-    }
-
-    .stat-item {
-        background: #f8f9ff;
-        padding: 0.8rem 1.5rem;
-        border-radius: 10px;
-        text-align: center;
-    }
-
-    .stat-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #667eea;
-    }
-
-    .stat-label {
-        font-size: 0.85rem;
-        color: #6b7280;
-        margin-top: 0.2rem;
-    }
-
-    .actions-bar {
-        display: flex;
-        gap: 1rem;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .view-controls {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .view-btn {
-        padding: 0.5rem 1rem;
-        background: #fff;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.3s;
-        font-weight: 500;
-        color: #374151;
-    }
-
-    .view-btn.active {
-        background: #667eea;
-        color: #fff;
-        border-color: #667eea;
-    }
-
-    .download-all {
-        padding: 0.6rem 1.5rem;
-        background: #10b981;
-        color: #fff;
-        border: none;
-        border-radius: 10px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .download-all:hover:not(:disabled) {
-        background: #059669;
-        transform: translateY(-2px);
-    }
-
-    #thumbs {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.5rem;
-        width: 100%;
-    }
-
-    #thumbs.grid-3 {
-        grid-template-columns: repeat(3, 1fr);
-    }
-
-    #thumbs.grid-4 {
-        grid-template-columns: repeat(4, 1fr);
-    }
-
-    .thumb-card {
-        position: relative;
-        width: 100%;
-        background: #fff;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        cursor: pointer;
-        transition: all 0.3s;
-        overflow: visible;
-        opacity: 0;
-        animation: fadeIn 0.5s forwards;
-    }
-
-    @keyframes fadeIn {
-        to {
-            opacity: 1;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartThumb Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
         }
-    }
 
-    .thumb-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at top right, #1a1c23 0%, #0f1115 100%);
+            color: #e5e7eb;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.5;
+        }
 
-    .thumb-card::before {
-        content: '';
-        display: block;
-        padding-top: 56.25%;
-    }
+        .container {
+            flex: 1;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
 
-    .thumb-card-inner {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        border-radius: 15px;
-    }
+        header {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #fff;
+            margin-bottom: 2rem;
+        }
 
-    .thumb-card img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-
-    .thumb-overlay {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-        padding: 1rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-
-    .thumb-card:hover .thumb-overlay {
-        opacity: 1;
-    }
-
-    .thumb-time {
-        color: #fff;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .thumb-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .action-btn {
-        width: 32px;
-        height: 32px;
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 8px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s;
-        padding: 0;
-    }
-
-    .action-btn:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: scale(1.1);
-    }
-
-    .action-btn svg {
-        width: 16px;
-        height: 16px;
-        stroke: white;
-    }
-
-    .download-menu {
-        position: absolute;
-        bottom: 100%;
-        right: 0;
-        margin-bottom: 10px;
-        background: rgba(30, 30, 35, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        padding: 12px;
-        display: none;
-        flex-direction: column;
-        gap: 8px;
-        min-width: 160px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-        border: 1px solid rgba(255,255,255,0.1);
-        z-index: 100;
-    }
-
-    .download-menu.show {
-        display: flex;
-    }
-
-    .download-menu label {
-        color: #aaa;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .download-menu select {
-        padding: 6px 8px;
-        border: 1px solid rgba(255,255,255,0.2);
-        border-radius: 6px;
-        font-size: 0.85rem;
-        background: rgba(255,255,255,0.1);
-        color: #fff;
-        cursor: pointer;
-    }
-
-    .download-menu select:focus {
-        outline: none;
-        border-color: #667eea;
-    }
-
-    .download-menu-btn {
-        padding: 8px 12px;
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        cursor: pointer;
-        margin-top: 4px;
-        transition: all 0.2s;
-    }
-
-    .download-menu-btn:hover {
-        transform: scale(1.02);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-    }
-
-    #modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.9);
-        justify-content: center;
-        align-items: center;
-        backdrop-filter: blur(10px);
-    }
-
-    #modal.show {
-        display: flex;
-    }
-
-    .modal-content {
-        position: relative;
-        max-width: 95vw;
-        max-height: 95vh;
-    }
-
-    #modal img {
-        max-width: 100%;
-        max-height: 95vh;
-        border-radius: 10px;
-        box-shadow: 0 10px 50px rgba(0,0,0,0.5);
-        object-fit: contain;
-    }
-
-    .modal-close {
-        position: absolute;
-        top: -40px;
-        right: 0;
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s;
-    }
-
-    .modal-close:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: rotate(90deg);
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-        color: #6b7280;
-    }
-
-    .empty-state svg {
-        width: 64px;
-        height: 64px;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-
-    footer {
-        padding: 1.5rem;
-        text-align: center;
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 0.9rem;
-    }
-
-    .scroll-buttons {
-        position: fixed;
-        right: 2rem;
-        bottom: 2rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        z-index: 999;
-    }
-
-    .scroll-btn {
-        width: 48px;
-        height: 48px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        border-radius: 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        transition: all 0.3s;
-        opacity: 0;
-        pointer-events: none;
-        color: white;
-        font-size: 20px;
-        font-weight: bold;
-    }
-
-    .scroll-btn.visible {
-        opacity: 1;
-        pointer-events: all;
-    }
-
-    .scroll-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-    }
-
-    @media (max-width: 768px) {
         header h1 {
-            font-size: 2rem;
+            margin: 0 0 0.5rem 0;
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+        }
+
+        header p {
+            margin: 0;
+            font-size: 1.1rem;
+            opacity: 0.9;
         }
 
         .upload-section {
-            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin-bottom: 2.5rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .drop-zone {
-            padding: 2rem 1rem;
+            width: 100%;
+            padding: 4rem 2rem;
+            border: 2px dashed rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            text-align: center;
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(99, 102, 241, 0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone:hover {
+            background: rgba(99, 102, 241, 0.05);
+            border-color: rgba(99, 102, 241, 0.6);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.1);
+        }
+
+        .drop-zone.dragover {
+            background: #e0e7ff;
+            border-color: #4f46e5;
+            color: #4f46e5;
+            transform: scale(1.02);
+        }
+
+        .drop-zone.has-file {
+            border-color: #10b981;
+            color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .drop-zone svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            opacity: 0.7;
         }
 
         .controls {
-            flex-direction: column;
-            align-items: stretch;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            justify-content: center;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
         }
 
         .control-group {
-            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .control-group input[type="number"] {
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 1rem;
+            width: 140px;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .control-group input[type="number"]:focus {
+            outline: none;
+            border-color: rgba(99, 102, 241, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        button {
+            padding: 0.8rem 2.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            color: #fff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.6);
+            filter: brightness(1.1);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-bar {
             width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .progress-bar.active {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+            width: 0%;
+            transition: width 0.3s ease-out;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        }
+
+        .stats {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1rem 2rem;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            min-width: 140px;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #fff;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .view-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .view-btn {
+            padding: 0.6rem 1.2rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .view-btn.active {
+            background: rgba(99, 102, 241, 0.1);
+            color: #fff;
+            border-color: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+        }
+
+        .download-all {
+            padding: 0.75rem 2rem;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+        }
+
+        .download-all:hover:not(:disabled) {
+            background: #059669;
+            transform: translateY(-2px);
         }
 
         #thumbs {
-            grid-template-columns: 1fr !important;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        #thumbs.grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        #thumbs.grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .thumb-card {
+            position: relative;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: visible;
+            opacity: 0;
+            animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .thumb-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .thumb-card::before {
+            content: '';
+            display: block;
+            padding-top: 56.25%;
+        }
+
+        .thumb-card-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-radius: 15px;
+        }
+
+        .thumb-card img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .thumb-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            padding: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .thumb-card:hover .thumb-overlay {
+            opacity: 1;
+        }
+
+        .thumb-time {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .thumb-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            padding: 0;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .action-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: white;
+        }
+
+        .download-menu {
+            position: absolute;
+            bottom: calc(100% + 12px);
+            right: -10px;
+            background: rgba(15, 17, 21, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 1.25rem;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 200px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            z-index: 100;
+            transform-origin: bottom right;
+            animation: menuAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes menuAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .download-menu.show {
+            display: flex;
+        }
+
+        .download-menu label {
+            color: #aaa;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .download-menu select {
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 14px;
+        }
+
+        .download-menu select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .download-menu-btn {
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin-top: 4px;
+            transition: all 0.2s;
+        }
+
+        .download-menu-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        #modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        #modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 95vw;
+            max-height: 95vh;
+        }
+
+        #modal img {
+            max-width: 100%;
+            max-height: 95vh;
+            border-radius: 10px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            object-fit: contain;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #6b7280;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        footer {
+            padding: 2.5rem;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
         }
 
         .scroll-buttons {
-            right: 1rem;
-            bottom: 1rem;
+            position: fixed;
+            right: 2.5rem;
+            bottom: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 999;
         }
 
         .scroll-btn {
-            width: 44px;
-            height: 44px;
+            width: 52px;
+            height: 52px;
+            background: rgba(15, 17, 21, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            pointer-events: none;
+            color: #fff;
         }
-    }
 
-    @media (max-width: 600px) {
-        #thumbs.grid-3,
-        #thumbs.grid-4 {
-            grid-template-columns: 1fr !important;
+        .scroll-btn.visible {
+            opacity: 1;
+            pointer-events: all;
         }
-    }
 
-    @media (min-width: 601px) and (max-width: 900px) {
-        #thumbs.grid-3,
-        #thumbs.grid-4 {
-            grid-template-columns: repeat(2, 1fr);
+        .scroll-btn:hover {
+            transform: translateY(-4px);
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.5);
+            color: #6366f1;
         }
-    }
-</style>
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .upload-section {
+                padding: 1.5rem;
+            }
+
+            .drop-zone {
+                padding: 2rem 1rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                width: 100%;
+            }
+
+            .control-group input[type="number"] {
+                width: 100%;
+            }
+
+            #thumbs {
+                grid-template-columns: 1fr !important;
+            }
+
+            .scroll-buttons {
+                right: 1rem;
+                bottom: 1rem;
+            }
+
+            .scroll-btn {
+                width: 44px;
+                height: 44px;
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            #thumbs.grid-3,
+            #thumbs.grid-4 {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        @media (min-width: 601px) and (max-width: 900px) {
+
+            #thumbs.grid-3,
+            #thumbs.grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
 </head>
+
 <body>
-<div class="container">
-    <header>
-        <h1>🎬 SmartThumb Pro</h1>
-        <p>Extraia miniaturas perfeitas dos seus vídeos em segundos</p>
-    </header>
+    <div class="container">
+        <header>
+            <h1>🎬 SmartThumb Pro</h1>
+            <p>Extraia miniaturas perfeitas dos seus vídeos em segundos</p>
+        </header>
 
-    <div class="upload-section">
-        <div class="drop-zone" id="dropZone">
+        <div class="upload-section">
+            <div class="drop-zone" id="dropZone">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                </svg>
+                <div>Arraste seu vídeo aqui ou clique para selecionar</div>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Número de miniaturas</label>
+                    <input type="number" id="frameCount" value="50" min="1" max="100">
+                </div>
+                <button id="generateThumbs" disabled>Gerar Miniaturas</button>
+                <button id="clearAll" style="background: #ef4444; display: none;">Limpar Tudo</button>
+            </div>
+
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="stats" id="stats" style="display: none;">
+                <div class="stat-item">
+                    <div class="stat-value" id="statFrames">0</div>
+                    <div class="stat-label">Miniaturas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statDuration">0:00</div>
+                    <div class="stat-label">Duração</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions-bar" id="actionsBar" style="display: none;">
+            <div class="view-controls">
+                <button class="view-btn active" data-grid="2">2 colunas</button>
+                <button class="view-btn" data-grid="3">3 colunas</button>
+                <button class="view-btn" data-grid="4">4 colunas</button>
+            </div>
+            <button class="download-all" id="downloadAll">Baixar Todas</button>
+        </div>
+
+        <div id="thumbs"></div>
+
+        <div class="empty-state" id="emptyState">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="m21 15-5-5L5 21" />
             </svg>
-            <div>Arraste seu vídeo aqui ou clique para selecionar</div>
-        </div>
-
-        <div class="controls">
-            <div class="control-group">
-                <label>Número de miniaturas</label>
-                <input type="number" id="frameCount" value="50" min="1" max="100">
-            </div>
-            <button id="generateThumbs" disabled>Gerar Miniaturas</button>
-            <button id="clearAll" style="background: #ef4444; display: none;">Limpar Tudo</button>
-        </div>
-
-        <div class="progress-bar" id="progressBar">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
-
-        <div class="stats" id="stats" style="display: none;">
-            <div class="stat-item">
-                <div class="stat-value" id="statFrames">0</div>
-                <div class="stat-label">Miniaturas</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="statDuration">0:00</div>
-                <div class="stat-label">Duração</div>
-            </div>
+            <p>Suas miniaturas aparecerão aqui</p>
         </div>
     </div>
 
-    <div class="actions-bar" id="actionsBar" style="display: none;">
-        <div class="view-controls">
-            <button class="view-btn active" data-grid="2">2 colunas</button>
-            <button class="view-btn" data-grid="3">3 colunas</button>
-            <button class="view-btn" data-grid="4">4 colunas</button>
+    <footer>Feito com HTML, CSS e JavaScript • SmartThumb Pro</footer>
+
+    <div class="scroll-buttons">
+        <button class="scroll-btn" id="scrollToTop" title="Voltar ao topo">▲</button>
+        <button class="scroll-btn" id="scrollToBottom" title="Ir para o final">▼</button>
+    </div>
+
+    <div id="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">×</button>
+            <img id="modalImg" src="" alt="Miniatura">
         </div>
-        <button class="download-all" id="downloadAll">Baixar Todas</button>
     </div>
 
-    <div id="thumbs"></div>
+    <video id="videoElem" style="display:none;"></video>
+    <canvas id="canvasElem" style="display:none;"></canvas>
 
-    <div class="empty-state" id="emptyState">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <path d="m21 15-5-5L5 21"/>
-        </svg>
-        <p>Suas miniaturas aparecerão aqui</p>
-    </div>
-</div>
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'video/*';
+        input.style.display = 'none';
+        document.body.appendChild(input);
 
-<footer>Feito com HTML, CSS e JavaScript • SmartThumb Pro</footer>
+        const video = document.getElementById("videoElem");
+        const canvas = document.getElementById("canvasElem");
+        const thumbs = document.getElementById("thumbs");
+        const generateBtn = document.getElementById("generateThumbs");
+        const clearBtn = document.getElementById("clearAll");
+        const frameCountInput = document.getElementById("frameCount");
+        const progressBar = document.getElementById("progressBar");
+        const progressFill = document.getElementById("progressFill");
+        const emptyState = document.getElementById("emptyState");
+        const actionsBar = document.getElementById("actionsBar");
+        const stats = document.getElementById("stats");
 
-<div class="scroll-buttons">
-    <button class="scroll-btn" id="scrollToTop" title="Voltar ao topo">▲</button>
-    <button class="scroll-btn" id="scrollToBottom" title="Ir para o final">▼</button>
-</div>
+        let file;
+        let capturedFrames = [];
 
-<div id="modal">
-    <div class="modal-content">
-        <button class="modal-close" id="modalClose">×</button>
-        <img id="modalImg" src="" alt="Miniatura">
-    </div>
-</div>
+        clearBtn.addEventListener('click', () => {
+            thumbs.innerHTML = '';
+            capturedFrames = [];
+            file = null;
 
-<video id="videoElem" style="display:none;"></video>
-<canvas id="canvasElem" style="display:none;"></canvas>
-
-<script>
-const dropZone = document.getElementById('dropZone');
-const input = document.createElement('input');
-input.type = 'file';
-input.accept = 'video/*';
-input.style.display = 'none';
-document.body.appendChild(input);
-
-const video = document.getElementById("videoElem");
-const canvas = document.getElementById("canvasElem");
-const thumbs = document.getElementById("thumbs");
-const generateBtn = document.getElementById("generateThumbs");
-const clearBtn = document.getElementById("clearAll");
-const frameCountInput = document.getElementById("frameCount");
-const progressBar = document.getElementById("progressBar");
-const progressFill = document.getElementById("progressFill");
-const emptyState = document.getElementById("emptyState");
-const actionsBar = document.getElementById("actionsBar");
-const stats = document.getElementById("stats");
-
-let file;
-let capturedFrames = [];
-
-clearBtn.addEventListener('click', () => {
-    thumbs.innerHTML = '';
-    capturedFrames = [];
-    file = null;
-    
-    dropZone.innerHTML = `
+            dropZone.innerHTML = `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
         </svg>
         <div>Arraste seu vídeo aqui ou clique para selecionar</div>
     `;
-    dropZone.classList.remove('has-file');
-    
-    generateBtn.disabled = true;
-    clearBtn.style.display = 'none';
-    
-    actionsBar.style.display = 'none';
-    stats.style.display = 'none';
-    progressBar.classList.remove('active');
-    emptyState.style.display = 'block';
-    
-    input.value = '';
-    video.src = '';
-});
+            dropZone.classList.remove('has-file');
 
-dropZone.addEventListener('click', () => input.click());
+            generateBtn.disabled = true;
+            clearBtn.style.display = 'none';
 
-dropZone.addEventListener('dragover', e => { 
-    e.preventDefault(); 
-    dropZone.classList.add('dragover'); 
-});
+            actionsBar.style.display = 'none';
+            stats.style.display = 'none';
+            progressBar.classList.remove('active');
+            emptyState.style.display = 'block';
 
-dropZone.addEventListener('dragleave', () => { 
-    dropZone.classList.remove('dragover'); 
-});
+            input.value = '';
+            video.src = '';
+        });
 
-dropZone.addEventListener('drop', e => { 
-    e.preventDefault(); 
-    dropZone.classList.remove('dragover'); 
-    handleFile(e.dataTransfer.files[0]);
-});
+        dropZone.addEventListener('click', () => input.click());
 
-input.addEventListener('change', () => { 
-    handleFile(input.files[0]);
-});
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
 
-function handleFile(selectedFile) {
-    if (!selectedFile || !selectedFile.type.startsWith('video/')) {
-        alert('Por favor, selecione um arquivo de vídeo válido!');
-        return;
-    }
-    
-    file = selectedFile;
-    const fileName = file.name.length > 40 ? file.name.substring(0, 40) + '...' : file.name;
-    dropZone.innerHTML = `
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        input.addEventListener('change', () => {
+            handleFile(input.files[0]);
+        });
+
+        function handleFile(selectedFile) {
+            if (!selectedFile || !selectedFile.type.startsWith('video/')) {
+                alert('Por favor, selecione um arquivo de vídeo válido!');
+                return;
+            }
+
+            file = selectedFile;
+            const fileName = file.name.length > 40 ? file.name.substring(0, 40) + '...' : file.name;
+            dropZone.innerHTML = `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
@@ -770,117 +838,117 @@ function handleFile(selectedFile) {
         </svg>
         <div style="margin-top: 0.5rem;">${fileName}</div>
     `;
-    dropZone.classList.add('has-file');
-    generateBtn.disabled = false;
-}
-
-generateBtn.addEventListener("click", () => {
-    if (!file) return;
-
-    thumbs.innerHTML = '';
-    capturedFrames = [];
-    emptyState.style.display = 'none';
-    actionsBar.style.display = 'none';
-    stats.style.display = 'none';
-    progressBar.classList.add('active');
-    progressFill.style.width = '0%';
-    generateBtn.disabled = true;
-
-    video.src = URL.createObjectURL(file);
-
-    video.addEventListener("loadeddata", () => {
-        const duration = video.duration;
-        const frames = parseInt(frameCountInput.value) || 20;
-        let count = 0;
-
-        document.getElementById('statDuration').textContent = formatTime(duration);
-
-        function captureFrame(time) { 
-            video.currentTime = time; 
+            dropZone.classList.add('has-file');
+            generateBtn.disabled = false;
         }
 
-        video.addEventListener("seeked", () => {
-            const ctx = canvas.getContext("2d");
-            
-            const targetAspect = 16 / 9;
-            const videoAspect = video.videoWidth / video.videoHeight;
-            
-            let canvasWidth, canvasHeight;
-            
-            if (videoAspect < targetAspect) {
-                canvasWidth = 1280;
-                canvasHeight = 720;
-            } else {
-                if (video.videoHeight > 720) {
-                    canvasHeight = 720;
-                    canvasWidth = Math.round((video.videoWidth / video.videoHeight) * 720);
-                } else {
-                    canvasWidth = video.videoWidth;
-                    canvasHeight = video.videoHeight;
+        generateBtn.addEventListener("click", () => {
+            if (!file) return;
+
+            thumbs.innerHTML = '';
+            capturedFrames = [];
+            emptyState.style.display = 'none';
+            actionsBar.style.display = 'none';
+            stats.style.display = 'none';
+            progressBar.classList.add('active');
+            progressFill.style.width = '0%';
+            generateBtn.disabled = true;
+
+            video.src = URL.createObjectURL(file);
+
+            video.addEventListener("loadeddata", () => {
+                const duration = video.duration;
+                const frames = parseInt(frameCountInput.value) || 20;
+                let count = 0;
+
+                document.getElementById('statDuration').textContent = formatTime(duration);
+
+                function captureFrame(time) {
+                    video.currentTime = time;
                 }
-            }
-            
-            canvas.width = canvasWidth;
-            canvas.height = canvasHeight;
-            
-            if (videoAspect < targetAspect) {
-                const bgScale = canvasWidth / video.videoWidth;
-                const bgHeight = video.videoHeight * bgScale;
-                const bgOffsetY = (canvasHeight - bgHeight) / 2;
-                
-                ctx.filter = 'blur(40px) brightness(0.6)';
-                ctx.drawImage(video, 0, bgOffsetY, canvasWidth, bgHeight);
-                
-                ctx.filter = 'none';
-                const scale = canvasHeight / video.videoHeight;
-                const scaledWidth = video.videoWidth * scale;
-                const offsetX = (canvasWidth - scaledWidth) / 2;
-                
-                ctx.drawImage(video, offsetX, 0, scaledWidth, canvasHeight);
-            } else {
-                ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
-            }
 
-            const jpgData = canvas.toDataURL("image/jpeg", 0.92);
-            const timeStamp = video.currentTime;
+                video.addEventListener("seeked", () => {
+                    const ctx = canvas.getContext("2d");
 
-            capturedFrames.push({ data: jpgData, time: timeStamp, index: count });
+                    const targetAspect = 16 / 9;
+                    const videoAspect = video.videoWidth / video.videoHeight;
 
-            const card = document.createElement('div');
-            card.className = 'thumb-card';
-            card.style.animationDelay = `${count * 0.05}s`;
+                    let canvasWidth, canvasHeight;
 
-            const inner = document.createElement('div');
-            inner.className = 'thumb-card-inner';
+                    if (videoAspect < targetAspect) {
+                        canvasWidth = 1280;
+                        canvasHeight = 720;
+                    } else {
+                        if (video.videoHeight > 720) {
+                            canvasHeight = 720;
+                            canvasWidth = Math.round((video.videoWidth / video.videoHeight) * 720);
+                        } else {
+                            canvasWidth = video.videoWidth;
+                            canvasHeight = video.videoHeight;
+                        }
+                    }
 
-            const img = document.createElement("img");
-            img.src = jpgData;
-            img.alt = `Miniatura ${count + 1}`;
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
 
-            img.addEventListener('click', () => {
-                const modal = document.getElementById('modal');
-                const modalImg = document.getElementById('modalImg');
-                modalImg.src = jpgData;
-                modal.classList.add('show');
-            });
+                    if (videoAspect < targetAspect) {
+                        const bgScale = canvasWidth / video.videoWidth;
+                        const bgHeight = video.videoHeight * bgScale;
+                        const bgOffsetY = (canvasHeight - bgHeight) / 2;
 
-            const overlay = document.createElement('div');
-            overlay.className = 'thumb-overlay';
+                        ctx.filter = 'blur(40px) brightness(0.6)';
+                        ctx.drawImage(video, 0, bgOffsetY, canvasWidth, bgHeight);
 
-            const timeLabel = document.createElement('span');
-            timeLabel.className = 'thumb-time';
-            timeLabel.textContent = formatTime(timeStamp);
+                        ctx.filter = 'none';
+                        const scale = canvasHeight / video.videoHeight;
+                        const scaledWidth = video.videoWidth * scale;
+                        const offsetX = (canvasWidth - scaledWidth) / 2;
 
-            const actions = document.createElement('div');
-            actions.className = 'thumb-actions';
+                        ctx.drawImage(video, offsetX, 0, scaledWidth, canvasHeight);
+                    } else {
+                        ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+                    }
 
-            const downloadBtn = document.createElement('button');
-            downloadBtn.className = 'action-btn';
-            downloadBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
-            
-            const downloadMenu = document.createElement('div');
-            downloadMenu.className = 'download-menu';
-            downloadMenu.innerHTML = `
+                    const jpgData = canvas.toDataURL("image/jpeg", 0.92);
+                    const timeStamp = video.currentTime;
+
+                    capturedFrames.push({ data: jpgData, time: timeStamp, index: count });
+
+                    const card = document.createElement('div');
+                    card.className = 'thumb-card';
+                    card.style.animationDelay = `${count * 0.05}s`;
+
+                    const inner = document.createElement('div');
+                    inner.className = 'thumb-card-inner';
+
+                    const img = document.createElement("img");
+                    img.src = jpgData;
+                    img.alt = `Miniatura ${count + 1}`;
+
+                    img.addEventListener('click', () => {
+                        const modal = document.getElementById('modal');
+                        const modalImg = document.getElementById('modalImg');
+                        modalImg.src = jpgData;
+                        modal.classList.add('show');
+                    });
+
+                    const overlay = document.createElement('div');
+                    overlay.className = 'thumb-overlay';
+
+                    const timeLabel = document.createElement('span');
+                    timeLabel.className = 'thumb-time';
+                    timeLabel.textContent = formatTime(timeStamp);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'thumb-actions';
+
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'action-btn';
+                    downloadBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
+
+                    const downloadMenu = document.createElement('div');
+                    downloadMenu.className = 'download-menu';
+                    downloadMenu.innerHTML = `
                 <label>Formato</label>
                 <select class="menu-format">
                     <option value="jpeg" selected>JPEG</option>
@@ -913,359 +981,360 @@ generateBtn.addEventListener("click", () => {
                 <button class="download-menu-btn">Baixar</button>
             `;
 
-            const currentFrameIndex = count;
-            
-            // Toggle de informação de múltiplas versões
-            const enhanceCheckbox = downloadMenu.querySelector('.menu-enhance');
-            const enhanceInfo = downloadMenu.querySelector('.enhance-info');
-            
-            enhanceCheckbox.addEventListener('change', (e) => {
-                e.stopPropagation();
-                enhanceInfo.style.display = enhanceCheckbox.checked ? 'block' : 'none';
-            });
-            
-            downloadBtn.onclick = (e) => {
-                e.stopPropagation();
-                document.querySelectorAll('.download-menu.show').forEach(m => m.classList.remove('show'));
-                downloadMenu.classList.toggle('show');
-            };
+                    const currentFrameIndex = count;
 
-            downloadMenu.querySelector('.download-menu-btn').onclick = async (e) => {
-                e.stopPropagation();
-                const format = downloadMenu.querySelector('.menu-format').value;
-                const quality = parseFloat(downloadMenu.querySelector('.menu-quality').value);
-                const resolution = downloadMenu.querySelector('.menu-resolution').value;
-                const multipleVersions = downloadMenu.querySelector('.menu-enhance').checked;
-                
-                if (multipleVersions) {
-                    // Baixar múltiplas versões: 0%, 20%, 40%, 60%, 80%, 100%
-                    const intensities = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
-                    for (let i = 0; i < intensities.length; i++) {
-                        setTimeout(() => {
-                            reprocessAndDownload(currentFrameIndex, format, quality, resolution, true, intensities[i]);
-                        }, i * 300); // 300ms de delay entre cada download
+                    // Toggle de informação de múltiplas versões
+                    const enhanceCheckbox = downloadMenu.querySelector('.menu-enhance');
+                    const enhanceInfo = downloadMenu.querySelector('.enhance-info');
+
+                    enhanceCheckbox.addEventListener('change', (e) => {
+                        e.stopPropagation();
+                        enhanceInfo.style.display = enhanceCheckbox.checked ? 'block' : 'none';
+                    });
+
+                    downloadBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        document.querySelectorAll('.download-menu.show').forEach(m => m.classList.remove('show'));
+                        downloadMenu.classList.toggle('show');
+                    };
+
+                    downloadMenu.querySelector('.download-menu-btn').onclick = async (e) => {
+                        e.stopPropagation();
+                        const format = downloadMenu.querySelector('.menu-format').value;
+                        const quality = parseFloat(downloadMenu.querySelector('.menu-quality').value);
+                        const resolution = downloadMenu.querySelector('.menu-resolution').value;
+                        const multipleVersions = downloadMenu.querySelector('.menu-enhance').checked;
+
+                        if (multipleVersions) {
+                            // Baixar múltiplas versões: 0%, 20%, 40%, 60%, 80%, 100%
+                            const intensities = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+                            for (let i = 0; i < intensities.length; i++) {
+                                setTimeout(() => {
+                                    reprocessAndDownload(currentFrameIndex, format, quality, resolution, true, intensities[i]);
+                                }, i * 300); // 300ms de delay entre cada download
+                            }
+                        } else {
+                            // Baixar apenas versão normal
+                            reprocessAndDownload(currentFrameIndex, format, quality, resolution, false, 1.0);
+                        }
+
+                        downloadMenu.classList.remove('show');
+                    };
+
+                    downloadMenu.onclick = (e) => e.stopPropagation();
+
+                    actions.appendChild(downloadBtn);
+                    overlay.appendChild(timeLabel);
+                    overlay.appendChild(actions);
+
+                    inner.appendChild(img);
+                    inner.appendChild(overlay);
+
+                    card.appendChild(inner);
+                    card.appendChild(downloadMenu);
+                    thumbs.appendChild(card);
+
+                    count++;
+                    const progress = (count / frames) * 100;
+                    progressFill.style.width = `${progress}%`;
+
+                    if (count < frames) {
+                        captureFrame((duration / frames) * count);
+                    } else {
+                        progressBar.classList.remove('active');
+                        generateBtn.disabled = false;
+                        clearBtn.style.display = 'inline-block';
+                        actionsBar.style.display = 'flex';
+                        stats.style.display = 'flex';
+                        document.getElementById('statFrames').textContent = count;
                     }
+                });
+
+                captureFrame(0);
+            }, { once: true });
+        });
+
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                thumbs.className = '';
+                const grid = btn.dataset.grid;
+                if (grid === '3') thumbs.classList.add('grid-3');
+                if (grid === '4') thumbs.classList.add('grid-4');
+            });
+        });
+
+        document.getElementById('downloadAll').addEventListener('click', () => {
+            capturedFrames.forEach((frame, i) => {
+                setTimeout(() => {
+                    downloadImage(frame.data, `thumb-${frame.index + 1}.jpg`);
+                }, i * 100);
+            });
+        });
+
+        function downloadImage(data, filename) {
+            const a = document.createElement('a');
+            a.href = data;
+            a.download = filename;
+            a.click();
+        }
+
+        function reprocessAndDownload(frameIndex, format, quality, resolution, enhance = false, intensity = 1.0) {
+            const frame = capturedFrames[frameIndex];
+            if (!frame) return;
+
+            const tempVideo = document.getElementById("videoElem");
+            const tempCanvas = document.getElementById("canvasElem");
+            const ctx = tempCanvas.getContext("2d");
+
+            tempVideo.currentTime = frame.time;
+
+            tempVideo.addEventListener("seeked", function onSeek() {
+                tempVideo.removeEventListener("seeked", onSeek);
+
+                const targetAspect = 16 / 9;
+                const videoAspect = tempVideo.videoWidth / tempVideo.videoHeight;
+
+                let canvasWidth, canvasHeight;
+                let targetHeight = resolution === 'original' ? tempVideo.videoHeight : parseInt(resolution);
+                const targetWidth = Math.round(targetHeight * (16 / 9));
+
+                // Determina o tamanho do canvas baseado na orientação do vídeo
+                if (videoAspect < targetAspect) {
+                    // Vídeo vertical - sempre 16:9
+                    canvasWidth = targetWidth;
+                    canvasHeight = targetHeight;
                 } else {
-                    // Baixar apenas versão normal
-                    reprocessAndDownload(currentFrameIndex, format, quality, resolution, false, 1.0);
+                    // Vídeo horizontal
+                    if (resolution === 'original') {
+                        canvasWidth = tempVideo.videoWidth;
+                        canvasHeight = tempVideo.videoHeight;
+                    } else if (tempVideo.videoHeight > targetHeight) {
+                        canvasHeight = targetHeight;
+                        canvasWidth = Math.round((tempVideo.videoWidth / tempVideo.videoHeight) * targetHeight);
+                    } else {
+                        canvasWidth = tempVideo.videoWidth;
+                        canvasHeight = tempVideo.videoHeight;
+                    }
                 }
-                
-                downloadMenu.classList.remove('show');
-            };
 
-            downloadMenu.onclick = (e) => e.stopPropagation();
+                tempCanvas.width = canvasWidth;
+                tempCanvas.height = canvasHeight;
 
-            actions.appendChild(downloadBtn);
-            overlay.appendChild(timeLabel);
-            overlay.appendChild(actions);
+                // Desenha com o mesmo efeito que aparece na tela
+                if (videoAspect < targetAspect) {
+                    // FUNDO DESFOCADO (mesmo efeito da visualização)
+                    const bgScale = canvasWidth / tempVideo.videoWidth;
+                    const bgHeight = tempVideo.videoHeight * bgScale;
+                    const bgOffsetY = (canvasHeight - bgHeight) / 2;
 
-            inner.appendChild(img);
-            inner.appendChild(overlay);
-            
-            card.appendChild(inner);
-            card.appendChild(downloadMenu);
-            thumbs.appendChild(card);
+                    ctx.filter = 'blur(40px) brightness(0.6)';
+                    ctx.drawImage(tempVideo, 0, bgOffsetY, canvasWidth, bgHeight);
 
-            count++;
-            const progress = (count / frames) * 100;
-            progressFill.style.width = `${progress}%`;
+                    // IMAGEM PRINCIPAL CENTRALIZADA
+                    ctx.filter = 'none';
+                    const scale = canvasHeight / tempVideo.videoHeight;
+                    const scaledWidth = tempVideo.videoWidth * scale;
+                    const offsetX = (canvasWidth - scaledWidth) / 2;
 
-            if (count < frames) { 
-                captureFrame((duration / frames) * count); 
-            } else {
-                progressBar.classList.remove('active');
-                generateBtn.disabled = false;
-                clearBtn.style.display = 'inline-block';
-                actionsBar.style.display = 'flex';
-                stats.style.display = 'flex';
-                document.getElementById('statFrames').textContent = count;
+                    ctx.drawImage(tempVideo, offsetX, 0, scaledWidth, canvasHeight);
+                } else {
+                    // Vídeo horizontal normal
+                    ctx.drawImage(tempVideo, 0, 0, canvasWidth, canvasHeight);
+                }
+
+                // Aplica melhorias automáticas estilo Photoshop
+                if (enhance) {
+                    const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+                    const data = imageData.data;
+                    const pixelCount = canvasWidth * canvasHeight;
+
+                    // Construir histogramas por canal
+                    const histR = new Array(256).fill(0);
+                    const histG = new Array(256).fill(0);
+                    const histB = new Array(256).fill(0);
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        histR[data[i]]++;
+                        histG[data[i + 1]]++;
+                        histB[data[i + 2]]++;
+                    }
+
+                    // Função para encontrar percentis (Auto Tone)
+                    function findPercentile(hist, percent) {
+                        const target = pixelCount * percent;
+                        let sum = 0;
+                        for (let i = 0; i < 256; i++) {
+                            sum += hist[i];
+                            if (sum >= target) return i;
+                        }
+                        return 255;
+                    }
+
+                    // Auto Tone: Encontrar pontos de corte (1% mais escuro e 1% mais claro)
+                    const minR = findPercentile(histR, 0.01);
+                    const maxR = findPercentile(histR, 0.99);
+                    const minG = findPercentile(histG, 0.01);
+                    const maxG = findPercentile(histG, 0.99);
+                    const minB = findPercentile(histB, 0.01);
+                    const maxB = findPercentile(histB, 0.99);
+
+                    // Auto Contrast: Média dos canais
+                    const minGlobal = Math.min(minR, minG, minB);
+                    const maxGlobal = Math.max(maxR, maxG, maxB);
+
+                    // Auto Color: Calcular média de cada canal
+                    let sumR = 0, sumG = 0, sumB = 0;
+                    for (let i = 0; i < data.length; i += 4) {
+                        sumR += data[i];
+                        sumG += data[i + 1];
+                        sumB += data[i + 2];
+                    }
+                    const avgR = sumR / pixelCount;
+                    const avgG = sumG / pixelCount;
+                    const avgB = sumB / pixelCount;
+                    const avgGray = (avgR + avgG + avgB) / 3;
+
+                    // Calcular ajustes de cor automáticos
+                    const colorIntensity = 0.3; // Ajuste aqui: 0.0 (sem correção) até 1.0 (máxima correção)
+                    const colorAdjustR = 1 + (avgGray / avgR - 1) * colorIntensity;
+                    const colorAdjustG = 1 + (avgGray / avgG - 1) * colorIntensity;
+                    const colorAdjustB = 1 + (avgGray / avgB - 1) * colorIntensity;
+
+                    // Aplicar correções pixel por pixel
+                    for (let i = 0; i < data.length; i += 4) {
+                        let r = data[i];
+                        let g = data[i + 1];
+                        let b = data[i + 2];
+
+                        // Guardar valores originais
+                        const origR = r;
+                        const origG = g;
+                        const origB = b;
+
+                        // Auto Tone: Expandir cada canal individualmente
+                        r = ((r - minR) / (maxR - minR)) * 255;
+                        g = ((g - minG) / (maxG - minG)) * 255;
+                        b = ((b - minB) / (maxB - minB)) * 255;
+
+                        // Auto Color: Neutralizar dominância de cor
+                        r = r * colorAdjustR;
+                        g = g * colorAdjustG;
+                        b = b * colorAdjustB;
+
+                        // Auto Contrast: Aplicar ajuste global suave (50% do efeito)
+                        const contrastFactor = 0.5;
+                        const globalR = ((r - minGlobal) / (maxGlobal - minGlobal)) * 255;
+                        const globalG = ((g - minGlobal) / (maxGlobal - minGlobal)) * 255;
+                        const globalB = ((b - minGlobal) / (maxGlobal - minGlobal)) * 255;
+
+                        r = r * (1 - contrastFactor) + globalR * contrastFactor;
+                        g = g * (1 - contrastFactor) + globalG * contrastFactor;
+                        b = b * (1 - contrastFactor) + globalB * contrastFactor;
+
+                        // Aplicar intensidade (mix entre original e processado)
+                        r = origR * (1 - intensity) + r * intensity;
+                        g = origG * (1 - intensity) + g * intensity;
+                        b = origB * (1 - intensity) + b * intensity;
+
+                        // Garantir valores válidos
+                        data[i] = Math.min(255, Math.max(0, Math.round(r)));
+                        data[i + 1] = Math.min(255, Math.max(0, Math.round(g)));
+                        data[i + 2] = Math.min(255, Math.max(0, Math.round(b)));
+                    }
+
+                    ctx.putImageData(imageData, 0, 0);
+                }
+
+                let mimeType = format === 'jpeg' ? 'image/jpeg' : (format === 'png' ? 'image/png' : 'image/webp');
+                let ext = format === 'jpeg' ? 'jpg' : format;
+
+                const imageData = tempCanvas.toDataURL(mimeType, quality);
+
+                // Nome do arquivo com intensidade
+                let filename;
+                if (enhance && intensity < 1.0) {
+                    const intensityPercent = Math.round(intensity * 100);
+                    filename = `thumb-${frameIndex + 1}-${intensityPercent}%.${ext}`;
+                } else if (enhance && intensity === 1.0) {
+                    filename = `thumb-${frameIndex + 1}-100%.${ext}`;
+                } else {
+                    filename = `thumb-${frameIndex + 1}.${ext}`;
+                }
+
+                downloadImage(imageData, filename);
+            });
+        }
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.download-menu.show').forEach(m => m.classList.remove('show'));
+        });
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        const modal = document.getElementById('modal');
+        const modalClose = document.getElementById('modalClose');
+
+        modal.addEventListener('click', e => {
+            if (e.target === modal) {
+                modal.classList.remove('show');
             }
         });
 
-        captureFrame(0);
-    }, { once: true });
-});
+        modalClose.addEventListener('click', () => {
+            modal.classList.remove('show');
+        });
 
-document.querySelectorAll('.view-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
-        thumbs.className = '';
-        const grid = btn.dataset.grid;
-        if (grid === '3') thumbs.classList.add('grid-3');
-        if (grid === '4') thumbs.classList.add('grid-4');
-    });
-});
-
-document.getElementById('downloadAll').addEventListener('click', () => {
-    capturedFrames.forEach((frame, i) => {
-        setTimeout(() => {
-            downloadImage(frame.data, `thumb-${frame.index + 1}.jpg`);
-        }, i * 100);
-    });
-});
-
-function downloadImage(data, filename) {
-    const a = document.createElement('a');
-    a.href = data;
-    a.download = filename;
-    a.click();
-}
-
-function reprocessAndDownload(frameIndex, format, quality, resolution, enhance = false, intensity = 1.0) {
-    const frame = capturedFrames[frameIndex];
-    if (!frame) return;
-    
-    const tempVideo = document.getElementById("videoElem");
-    const tempCanvas = document.getElementById("canvasElem");
-    const ctx = tempCanvas.getContext("2d");
-    
-    tempVideo.currentTime = frame.time;
-    
-    tempVideo.addEventListener("seeked", function onSeek() {
-        tempVideo.removeEventListener("seeked", onSeek);
-        
-        const targetAspect = 16 / 9;
-        const videoAspect = tempVideo.videoWidth / tempVideo.videoHeight;
-        
-        let canvasWidth, canvasHeight;
-        let targetHeight = resolution === 'original' ? tempVideo.videoHeight : parseInt(resolution);
-        const targetWidth = Math.round(targetHeight * (16 / 9));
-        
-        // Determina o tamanho do canvas baseado na orientação do vídeo
-        if (videoAspect < targetAspect) {
-            // Vídeo vertical - sempre 16:9
-            canvasWidth = targetWidth;
-            canvasHeight = targetHeight;
-        } else {
-            // Vídeo horizontal
-            if (resolution === 'original') {
-                canvasWidth = tempVideo.videoWidth;
-                canvasHeight = tempVideo.videoHeight;
-            } else if (tempVideo.videoHeight > targetHeight) {
-                canvasHeight = targetHeight;
-                canvasWidth = Math.round((tempVideo.videoWidth / tempVideo.videoHeight) * targetHeight);
-            } else {
-                canvasWidth = tempVideo.videoWidth;
-                canvasHeight = tempVideo.videoHeight;
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && modal.classList.contains('show')) {
+                modal.classList.remove('show');
             }
-        }
-        
-        tempCanvas.width = canvasWidth;
-        tempCanvas.height = canvasHeight;
-        
-        // Desenha com o mesmo efeito que aparece na tela
-        if (videoAspect < targetAspect) {
-            // FUNDO DESFOCADO (mesmo efeito da visualização)
-            const bgScale = canvasWidth / tempVideo.videoWidth;
-            const bgHeight = tempVideo.videoHeight * bgScale;
-            const bgOffsetY = (canvasHeight - bgHeight) / 2;
-            
-            ctx.filter = 'blur(40px) brightness(0.6)';
-            ctx.drawImage(tempVideo, 0, bgOffsetY, canvasWidth, bgHeight);
-            
-            // IMAGEM PRINCIPAL CENTRALIZADA
-            ctx.filter = 'none';
-            const scale = canvasHeight / tempVideo.videoHeight;
-            const scaledWidth = tempVideo.videoWidth * scale;
-            const offsetX = (canvasWidth - scaledWidth) / 2;
-            
-            ctx.drawImage(tempVideo, offsetX, 0, scaledWidth, canvasHeight);
-        } else {
-            // Vídeo horizontal normal
-            ctx.drawImage(tempVideo, 0, 0, canvasWidth, canvasHeight);
-        }
-        
-        // Aplica melhorias automáticas estilo Photoshop
-        if (enhance) {
-            const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
-            const data = imageData.data;
-            const pixelCount = canvasWidth * canvasHeight;
-            
-            // Construir histogramas por canal
-            const histR = new Array(256).fill(0);
-            const histG = new Array(256).fill(0);
-            const histB = new Array(256).fill(0);
-            
-            for (let i = 0; i < data.length; i += 4) {
-                histR[data[i]]++;
-                histG[data[i + 1]]++;
-                histB[data[i + 2]]++;
-            }
-            
-            // Função para encontrar percentis (Auto Tone)
-            function findPercentile(hist, percent) {
-                const target = pixelCount * percent;
-                let sum = 0;
-                for (let i = 0; i < 256; i++) {
-                    sum += hist[i];
-                    if (sum >= target) return i;
+        });
+
+        const scrollToTop = document.getElementById('scrollToTop');
+        const scrollToBottom = document.getElementById('scrollToBottom');
+
+        function updateScrollButtons() {
+            const scrolled = window.scrollY;
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+
+            if (documentHeight > windowHeight + 100) {
+                if (scrolled > 300) {
+                    scrollToTop.classList.add('visible');
+                } else {
+                    scrollToTop.classList.remove('visible');
                 }
-                return 255;
+
+                if (scrolled < documentHeight - windowHeight - 300) {
+                    scrollToBottom.classList.add('visible');
+                } else {
+                    scrollToBottom.classList.remove('visible');
+                }
+            } else {
+                scrollToTop.classList.remove('visible');
+                scrollToBottom.classList.remove('visible');
             }
-            
-            // Auto Tone: Encontrar pontos de corte (1% mais escuro e 1% mais claro)
-            const minR = findPercentile(histR, 0.01);
-            const maxR = findPercentile(histR, 0.99);
-            const minG = findPercentile(histG, 0.01);
-            const maxG = findPercentile(histG, 0.99);
-            const minB = findPercentile(histB, 0.01);
-            const maxB = findPercentile(histB, 0.99);
-            
-            // Auto Contrast: Média dos canais
-            const minGlobal = Math.min(minR, minG, minB);
-            const maxGlobal = Math.max(maxR, maxG, maxB);
-            
-            // Auto Color: Calcular média de cada canal
-            let sumR = 0, sumG = 0, sumB = 0;
-            for (let i = 0; i < data.length; i += 4) {
-                sumR += data[i];
-                sumG += data[i + 1];
-                sumB += data[i + 2];
-            }
-            const avgR = sumR / pixelCount;
-            const avgG = sumG / pixelCount;
-            const avgB = sumB / pixelCount;
-            const avgGray = (avgR + avgG + avgB) / 3;
-            
-            // Calcular ajustes de cor automáticos
-            const colorIntensity = 0.3; // Ajuste aqui: 0.0 (sem correção) até 1.0 (máxima correção)
-            const colorAdjustR = 1 + (avgGray / avgR - 1) * colorIntensity;
-            const colorAdjustG = 1 + (avgGray / avgG - 1) * colorIntensity;
-            const colorAdjustB = 1 + (avgGray / avgB - 1) * colorIntensity;
-            
-            // Aplicar correções pixel por pixel
-            for (let i = 0; i < data.length; i += 4) {
-                let r = data[i];
-                let g = data[i + 1];
-                let b = data[i + 2];
-                
-                // Guardar valores originais
-                const origR = r;
-                const origG = g;
-                const origB = b;
-                
-                // Auto Tone: Expandir cada canal individualmente
-                r = ((r - minR) / (maxR - minR)) * 255;
-                g = ((g - minG) / (maxG - minG)) * 255;
-                b = ((b - minB) / (maxB - minB)) * 255;
-                
-                // Auto Color: Neutralizar dominância de cor
-                r = r * colorAdjustR;
-                g = g * colorAdjustG;
-                b = b * colorAdjustB;
-                
-                // Auto Contrast: Aplicar ajuste global suave (50% do efeito)
-                const contrastFactor = 0.5;
-                const globalR = ((r - minGlobal) / (maxGlobal - minGlobal)) * 255;
-                const globalG = ((g - minGlobal) / (maxGlobal - minGlobal)) * 255;
-                const globalB = ((b - minGlobal) / (maxGlobal - minGlobal)) * 255;
-                
-                r = r * (1 - contrastFactor) + globalR * contrastFactor;
-                g = g * (1 - contrastFactor) + globalG * contrastFactor;
-                b = b * (1 - contrastFactor) + globalB * contrastFactor;
-                
-                // Aplicar intensidade (mix entre original e processado)
-                r = origR * (1 - intensity) + r * intensity;
-                g = origG * (1 - intensity) + g * intensity;
-                b = origB * (1 - intensity) + b * intensity;
-                
-                // Garantir valores válidos
-                data[i] = Math.min(255, Math.max(0, Math.round(r)));
-                data[i + 1] = Math.min(255, Math.max(0, Math.round(g)));
-                data[i + 2] = Math.min(255, Math.max(0, Math.round(b)));
-            }
-            
-            ctx.putImageData(imageData, 0, 0);
-        }
-        
-        let mimeType = format === 'jpeg' ? 'image/jpeg' : (format === 'png' ? 'image/png' : 'image/webp');
-        let ext = format === 'jpeg' ? 'jpg' : format;
-        
-        const imageData = tempCanvas.toDataURL(mimeType, quality);
-        
-        // Nome do arquivo com intensidade
-        let filename;
-        if (enhance && intensity < 1.0) {
-            const intensityPercent = Math.round(intensity * 100);
-            filename = `thumb-${frameIndex + 1}-${intensityPercent}%.${ext}`;
-        } else if (enhance && intensity === 1.0) {
-            filename = `thumb-${frameIndex + 1}-100%.${ext}`;
-        } else {
-            filename = `thumb-${frameIndex + 1}.${ext}`;
-        }
-        
-        downloadImage(imageData, filename);
-    });
-}
-
-document.addEventListener('click', () => {
-    document.querySelectorAll('.download-menu.show').forEach(m => m.classList.remove('show'));
-});
-
-function formatTime(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
-
-const modal = document.getElementById('modal');
-const modalClose = document.getElementById('modalClose');
-
-modal.addEventListener('click', e => {
-    if(e.target === modal) {
-        modal.classList.remove('show');
-    }
-});
-
-modalClose.addEventListener('click', () => {
-    modal.classList.remove('show');
-});
-
-document.addEventListener('keydown', e => {
-    if(e.key === 'Escape' && modal.classList.contains('show')) {
-        modal.classList.remove('show');
-    }
-});
-
-const scrollToTop = document.getElementById('scrollToTop');
-const scrollToBottom = document.getElementById('scrollToBottom');
-
-function updateScrollButtons() {
-    const scrolled = window.scrollY;
-    const windowHeight = window.innerHeight;
-    const documentHeight = document.documentElement.scrollHeight;
-
-    if (documentHeight > windowHeight + 100) {
-        if (scrolled > 300) {
-            scrollToTop.classList.add('visible');
-        } else {
-            scrollToTop.classList.remove('visible');
         }
 
-        if (scrolled < documentHeight - windowHeight - 300) {
-            scrollToBottom.classList.add('visible');
-        } else {
-            scrollToBottom.classList.remove('visible');
-        }
-    } else {
-        scrollToTop.classList.remove('visible');
-        scrollToBottom.classList.remove('visible');
-    }
-}
+        scrollToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        });
 
-scrollToTop.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-});
+        scrollToBottom.addEventListener('click', () => {
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+        });
 
-scrollToBottom.addEventListener('click', () => {
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
-});
-
-window.addEventListener('scroll', updateScrollButtons);
-window.addEventListener('resize', updateScrollButtons);
-updateScrollButtons();
-</script>
+        window.addEventListener('scroll', updateScrollButtons);
+        window.addEventListener('resize', updateScrollButtons);
+        updateScrollButtons();
+    </script>
 </body>
+
 </html>
